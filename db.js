@@ -239,4 +239,18 @@ try {
   }
 } catch(e) {}
 
+// Migration: reminder_emails table for multiple verified email recipients
+db.exec(`
+  CREATE TABLE IF NOT EXISTS reminder_emails (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    email TEXT NOT NULL,
+    verified INTEGER NOT NULL DEFAULT 0,
+    verify_token TEXT,
+    token_expires TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+`);
+
 module.exports = db;

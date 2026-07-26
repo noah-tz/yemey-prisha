@@ -40,14 +40,35 @@ var Settings = (function() {
         saveReminderSettings();
       });
     }
-    var reminderEmailInput = document.getElementById('setting-reminder-email');
-    if (reminderEmailInput) {
-      var reminderTimeout = null;
-      reminderEmailInput.addEventListener('input', function() {
-        clearTimeout(reminderTimeout);
-        reminderTimeout = setTimeout(function() {
-          saveReminderSettings();
-        }, 1000);
+
+    // Multi-email management
+    var addEmailBtn = document.getElementById('add-reminder-email-btn');
+    if (addEmailBtn) {
+      addEmailBtn.addEventListener('click', function() {
+        var emailInput = document.getElementById('add-reminder-email');
+        var msgEl = document.getElementById('reminder-email-message');
+        var email = emailInput.value.trim();
+        msgEl.textContent = '';
+
+        if (!email || !email.includes('@')) {
+          msgEl.className = 'error-message';
+          msgEl.textContent = 'נא להזין כתובת מייל תקינה';
+          return;
+        }
+
+        Api.post('/api/reminder-emails', { email: email })
+          .then(function(data) {
+            emailInput.value = '';
+            msgEl.className = 'success-message';
+            msgEl.textContent = 'מייל אימות נשלח ✓';
+            setTimeout(function() { msgEl.textContent = ''; }, 5000);
+            loadReminderEmails();
+          })
+          .catch(function(err) {
+            msgEl.className = 'error-message';
+            msgEl.textContent = err.message || 'שגיאה';
+            setTimeout(function() { msgEl.textContent = ''; }, 5000);
+          });
       });
     }
 
@@ -136,6 +157,8 @@ var Settings = (function() {
   function render() {
     // Load API key
     loadApiKey();
+    // Load reminder emails list
+    loadReminderEmails();
 
     Api.get('/api/settings')
       .then(function(data) {
@@ -159,9 +182,7 @@ var Settings = (function() {
 
         // Reminder settings
         var reminderEnabled = document.getElementById('setting-reminder-enabled');
-        var reminderEmail = document.getElementById('setting-reminder-email');
         if (reminderEnabled) reminderEnabled.checked = !!data.reminder_enabled;
-        if (reminderEmail) reminderEmail.value = data.reminder_email || '';
       })
       .catch(function() {
         // Default to rama and all defaults
@@ -210,11 +231,9 @@ var Settings = (function() {
 
   function saveReminderSettings() {
     var reminderEnabled = document.getElementById('setting-reminder-enabled');
-    var reminderEmail = document.getElementById('setting-reminder-email');
 
     var payload = {
-      reminder_enabled: reminderEnabled ? reminderEnabled.checked : false,
-      reminder_email: reminderEmail ? reminderEmail.value.trim() : ''
+      reminder_enabled: reminderEnabled ? reminderEnabled.checked : false
     };
 
     var msgEl = document.getElementById('reminder-message');
@@ -235,6 +254,56 @@ var Settings = (function() {
           setTimeout(function() { msgEl.textContent = ''; msgEl.className = 'success-message'; }, 3000);
         }
       });
+  }
+
+  function loadReminderEmails() {
+    Api.get('/api/reminder-emails')
+      .then(function(data) {
+        var container = document.getElementById('reminder-emails-list');
+        if (!container) return;
+        container.innerHTML = '';
+        var emails = data.emails || [];
+
+        if (emails.length === 0) {
+          container.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 0.85rem;">לא הוגדרו כתובות. הוסף כתובת מייל למטה.</p>';
+          return;
+        }
+
+        emails.forEach(function(e) {
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0; border-bottom:1px solid var(--color-border);';
+
+          var emailSpan = document.createElement('span');
+          emailSpan.style.cssText = 'flex:1; direction:ltr; text-align:left; font-size:0.9rem;';
+          emailSpan.textContent = e.email;
+
+          var statusSpan = document.createElement('span');
+          statusSpan.style.cssText = 'font-size:0.75rem; padding:0.15rem 0.4rem; border-radius:4px;';
+          if (e.verified) {
+            statusSpan.textContent = '\u2713 מאומת';
+            statusSpan.style.background = '#E8F5E9';
+            statusSpan.style.color = '#2E7D32';
+          } else {
+            statusSpan.textContent = 'ממתין לאימות';
+            statusSpan.style.background = '#FFF3E0';
+            statusSpan.style.color = '#E65100';
+          }
+
+          var delBtn = document.createElement('button');
+          delBtn.className = 'btn btn-danger';
+          delBtn.style.cssText = 'font-size:0.7rem; padding:0.2rem 0.4rem;';
+          delBtn.textContent = '\u2715';
+          delBtn.addEventListener('click', function() {
+            Api.del('/api/reminder-emails/' + e.id).then(function() { loadReminderEmails(); });
+          });
+
+          row.appendChild(emailSpan);
+          row.appendChild(statusSpan);
+          row.appendChild(delBtn);
+          container.appendChild(row);
+        });
+      })
+      .catch(function() {});
   }
 
   return {

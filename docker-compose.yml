@@ -15,9 +15,10 @@ services:
       - SESSION_SECRET=${SESSION_SECRET}
       - ALLOW_REGISTRATION=false
       - NODE_ENV=production
-      - SMTP_HOST=172.22.0.1
-      - SMTP_PORT=25
-    # Security hardening
+      - SMTP_HOST=smtp-relay.brevo.com
+      - SMTP_PORT=587
+      - SMTP_USER=a427c1001@smtp-brevo.com
+      - SMTP_PASS=xsmtpsib-3b992bdafc34aab8bf5cb26dbf5facbf8507449dd7e9f157cf27118474c26c1a-mrEpNRuz0JAZ2l9s
     security_opt:
       - no-new-privileges:true
     read_only: true

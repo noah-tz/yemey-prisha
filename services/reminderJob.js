@@ -61,12 +61,30 @@ async function runReminders() {
       }
 
       // Build email
-      const recipientEmail = user.reminder_email || user.email;
+      const reminderEmailRepo = require('../repositories/reminderEmailRepository');
+      const verifiedEmails = reminderEmailRepo.findVerifiedByUser(user.id);
+      const recipients = verifiedEmails.map(e => e.email);
+
+      // Also include the main reminder_email if set, or login email
+      if (user.reminder_email) {
+        if (!recipients.includes(user.reminder_email)) recipients.push(user.reminder_email);
+      } else if (!recipients.includes(user.email)) {
+        recipients.push(user.email);
+      }
+
+      if (recipients.length === 0) {
+        console.log(`[Reminder] User ${user.id}: no verified emails, skipping.`);
+        continue;
+      }
+
       const subject = '\u{1F319} תזכורת ימי פרישה — ' + formatHebrewDate(relevant[0]);
       const body = buildReminderHtml(relevant, todayRd, tomorrowRd);
 
-      await sendReminder(recipientEmail, subject, body);
-      console.log(`[Reminder] Sent to ${recipientEmail} (${relevant.length} items).`);
+      // Send to all recipients
+      for (const recipientEmail of recipients) {
+        await sendReminder(recipientEmail, subject, body);
+      }
+      console.log(`[Reminder] Sent to ${recipients.length} recipients for user ${user.id}.`);
 
     } catch (err) {
       console.error(`[Reminder] Error for user ${user.id}:`, err.message);
