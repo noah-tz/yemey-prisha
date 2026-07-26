@@ -71,39 +71,41 @@
 
 ## 🏗️ Architecture
 
-```
-┌────────────────────────────────────────────────────────────┐
-│                    HTTPS (Let's Encrypt)                    │
-├────────────────────────────────────────────────────────────┤
-│              Nginx Proxy Manager (Docker)                   │
-├────────────────────────────────────────────────────────────┤
-│                                                            │
-│   ┌──────────────────────────────────────────────────┐    │
-│   │           Node.js / Express (Docker)              │    │
-│   │                                                    │    │
-│   │  ┌─────────┐  ┌──────────┐  ┌───────────────┐   │    │
-│   │  │  Auth   │  │  Cycles  │  │   Vestot Calc  │   │    │
-│   │  │ (bcrypt)│  │  (CRUD)  │  │   Engine       │   │    │
-│   │  └────┬────┘  └────┬─────┘  └───────┬───────┘   │    │
-│   │       │             │                │            │    │
-│   │  ┌────▼─────────────▼────────────────▼───────┐   │    │
-│   │  │         Encrypted Blob Service             │   │    │
-│   │  │    (load → decrypt → compute → encrypt     │   │    │
-│   │  │                  → save)                   │   │    │
-│   │  └────────────────────┬──────────────────────┘   │    │
-│   │                       │                           │    │
-│   │  ┌────────────────────▼──────────────────────┐   │    │
-│   │  │              SQLite (WAL)                  │   │    │
-│   │  │  ┌────────┐  ┌────────────────────────┐   │   │    │
-│   │  │  │ users  │  │ user_data              │   │   │    │
-│   │  │  │ (plain)│  │ (encrypted blob only)  │   │   │    │
-│   │  │  └────────┘  └────────────────────────┘   │   │    │
-│   │  └───────────────────────────────────────────┘   │    │
-│   └──────────────────────────────────────────────────┘    │
-│                                                            │
-│   Security: non-root │ read-only FS │ all caps dropped     │
-│             no-new-privileges │ rate limiting               │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Internet
+        USER[👤 User Browser]
+    end
+
+    subgraph Server["🖥️ Server (178.104.62.19)"]
+        subgraph NPM["Nginx Proxy Manager"]
+            SSL[HTTPS / Let's Encrypt]
+        end
+        
+        subgraph Docker["Docker Container (non-root, read-only)"]
+            EXPRESS[Node.js / Express]
+            AUTH[Auth Service<br/>bcrypt + sessions]
+            CALC[Veset Calculation<br/>Engine]
+            BLOB[Encrypted Blob Service<br/>load → decrypt → compute<br/>→ encrypt → save]
+            EMAIL[Email Service<br/>Brevo SMTP]
+            MCP_INT[MCP Server<br/>AI Integration]
+        end
+        
+        subgraph DB["SQLite (WAL mode)"]
+            USERS[(users<br/>email, settings)]
+            DATA[(user_data<br/>encrypted blob)]
+        end
+    end
+
+    USER -->|HTTPS| SSL
+    SSL -->|proxy| EXPRESS
+    EXPRESS --> AUTH
+    EXPRESS --> CALC
+    EXPRESS --> BLOB
+    EXPRESS --> EMAIL
+    BLOB --> DATA
+    AUTH --> USERS
+    MCP_INT -->|API Key| EXPRESS
 ```
 
 ---
