@@ -14,9 +14,10 @@ function encryptCycleRecord(record, encKey) {
   return {
     ...record,
     start_date: cryptoService.encrypt(record.start_date, encKey),
+    start_rd: 0, // Zero out — real value in enc_heb
     onah: cryptoService.encrypt(record.onah, encKey),
     enc_heb: cryptoService.encryptJSON(
-      { y: record.start_heb_year, m: record.start_heb_month, d: record.start_heb_day },
+      { y: record.start_heb_year, m: record.start_heb_month, d: record.start_heb_day, rd: record.start_rd },
       encKey
     ),
     // Keep plaintext heb fields as 0 (they'll be read from enc_heb on decrypt)
@@ -48,12 +49,13 @@ function decryptCycleRecord(record, encKey) {
       start_date: cryptoService.decrypt(record.start_date, encKey),
       onah: cryptoService.decrypt(record.onah, encKey)
     };
-    // Decrypt Hebrew date bundle
+    // Decrypt Hebrew date bundle (includes rd)
     if (record.enc_heb) {
       const heb = cryptoService.decryptJSON(record.enc_heb, encKey);
       decrypted.start_heb_year = heb.y;
       decrypted.start_heb_month = heb.m;
       decrypted.start_heb_day = heb.d;
+      if (heb.rd) decrypted.start_rd = heb.rd; // restore real RD
     }
     return decrypted;
   } catch (e) {
@@ -73,10 +75,11 @@ function encryptVesetDate(veset, encKey) {
   return {
     ...veset,
     date: cryptoService.encrypt(veset.date, encKey),
+    date_rd: 0, // Zero out — real value in enc_heb
     type: cryptoService.encrypt(veset.type, encKey),
     onah: cryptoService.encrypt(veset.onah, encKey),
     enc_heb: cryptoService.encryptJSON(
-      { y: veset.heb_year, m: veset.heb_month, d: veset.heb_day },
+      { y: veset.heb_year, m: veset.heb_month, d: veset.heb_day, rd: veset.date_rd },
       encKey
     ),
     // Zero out plaintext heb fields
@@ -112,6 +115,7 @@ function decryptVesetDate(veset, encKey) {
       decrypted.heb_year = heb.y;
       decrypted.heb_month = heb.m;
       decrypted.heb_day = heb.d;
+      if (heb.rd) decrypted.date_rd = heb.rd;
     }
     return decrypted;
   } catch (e) {

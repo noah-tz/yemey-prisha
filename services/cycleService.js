@@ -30,9 +30,11 @@ function createRecord(userId, input, encKey) {
     startHeb = HebrewDateUtils.rd2heb(startRd);
   }
 
-  // 2. Check for overlapping records
-  const overlapping = cycleRepository.findOverlapping(userId, startRd, null);
-  if (overlapping.length > 0) {
+  // 2. Check for overlapping records (by decrypting all and comparing rd)
+  const allRecords = cycleRepository.findByUser(userId);
+  const decryptedAll = allRecords.map(r => decryptCycleRecord(r, encKey));
+  const overlap = decryptedAll.some(r => r.start_rd === startRd);
+  if (overlap) {
     throw new Error('Date conflicts with existing cycle record');
   }
 
@@ -117,7 +119,7 @@ function updateRecord(userId, recordId, updates, encKey) {
 
   // Build final update payload for repository
   const repoUpdate = {};
-  if (updateData.start_rd) repoUpdate.start_rd = updateData.start_rd;
+  repoUpdate.start_rd = 0; // Always zero — real value is in enc_heb
   if (Object.prototype.hasOwnProperty.call(updateData, 'end_date')) repoUpdate.end_date = updateData.end_date;
   repoUpdate.start_date = encryptedUpdate.start_date;
   repoUpdate.start_heb_year = encryptedUpdate.start_heb_year;
@@ -164,9 +166,11 @@ function getHistory(userId, encKey) {
   const records = cycleRepository.findByUser(userId);
   // Decrypt all records
   const decrypted = records.map(r => decryptCycleRecord(r, encKey));
-  // Add interval from previous record (using start_rd which is always plaintext)
+  // Sort by start_rd (now decrypted from enc_heb)
+  decrypted.sort((a, b) => a.start_rd - b.start_rd);
+  // Add interval from previous record
   return decrypted.map((record, index) => {
-    const interval = index > 0 ? records[index].start_rd - records[index - 1].start_rd : null;
+    const interval = index > 0 ? record.start_rd - decrypted[index - 1].start_rd : null;
     return { ...record, intervalFromPrevious: interval };
   });
 }
@@ -235,9 +239,11 @@ function importRecords(userId, records, encKey) {
         continue;
       }
 
-      // Check overlap
-      const overlapping = cycleRepository.findOverlapping(userId, startRd, null);
-      if (overlapping.length > 0) {
+      // Check overlap (decrypt all records and compare rd)
+      const allExisting = cycleRepository.findByUser(userId);
+      const decryptedExisting = allExisting.map(r => decryptCycleRecord(r, encKey));
+      const hasOverlap = decryptedExisting.some(r => r.start_rd === startRd);
+      if (hasOverlap) {
         results.errors.push({ index: i, date: startDate, error: 'Date conflicts with existing record' });
         results.skipped++;
         continue;
@@ -316,8 +322,10 @@ function toISODate(date) {
 // Helper: add interval info to a single record
 function enrichWithInterval(record, userId, encKey) {
   const all = cycleRepository.findByUser(userId);
-  const idx = all.findIndex(r => r.id === record.id);
-  const interval = idx > 0 ? all[idx].start_rd - all[idx - 1].start_rd : null;
+  const decrypted = all.map(r => decryptCycleRecord(r, encKey));
+  decrypted.sort((a, b) => a.start_rd - b.start_rd);
+  const idx = decrypted.findIndex(r => r.id === record.id);
+  const interval = idx > 0 ? decrypted[idx].start_rd - decrypted[idx - 1].start_rd : null;
   return { ...record, intervalFromPrevious: interval };
 }
 
