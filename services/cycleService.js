@@ -302,7 +302,7 @@ function recalculateVestot(userId, encKey) {
 
   // Calculate vestot using decrypted records
   // We need to pass decrypted records to the engine, so we use the engine's internal methods
-  const allVestot = vesetCalculationEngine.calculateFromRecords(decryptedRecords, settings, userId);
+  const allVestot = vesetCalculationEngine.calculateFromRecords(decryptedRecords, settings, userId, undefined, encKey);
 
   // Encrypt vestot before storing
   if (allVestot.length > 0) {

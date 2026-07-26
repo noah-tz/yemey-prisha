@@ -196,4 +196,39 @@ if (vesetDatesSql && vesetDatesSql.sql && vesetDatesSql.sql.includes("CHECK (ona
   } catch(e) {}
 }
 
+// Migration: mechitzot table for haflagah reset boundaries
+db.exec(`
+  CREATE TABLE IF NOT EXISTS mechitzot (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    after_record_id TEXT NOT NULL,
+    description TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+`);
+
+// Migrate mechitzot from INTEGER to TEXT for encrypted after_record_id
+try {
+  const mechitzaSql = db.prepare("SELECT sql FROM sqlite_master WHERE name='mechitzot'").get();
+  if (mechitzaSql && mechitzaSql.sql && mechitzaSql.sql.includes('after_record_id INTEGER')) {
+    db.pragma('foreign_keys = OFF');
+    db.exec(`
+      CREATE TABLE mechitzot_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        after_record_id TEXT NOT NULL,
+        description TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+      INSERT INTO mechitzot_new (id, user_id, after_record_id, description, created_at)
+        SELECT id, user_id, CAST(after_record_id AS TEXT), description, created_at FROM mechitzot;
+      DROP TABLE mechitzot;
+      ALTER TABLE mechitzot_new RENAME TO mechitzot;
+    `);
+    db.pragma('foreign_keys = ON');
+  }
+} catch(e) {}
+
 module.exports = db;

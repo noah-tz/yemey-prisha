@@ -67,7 +67,7 @@ class VesetCalculationEngine {
    * @param {number} userId - User ID (for setting user_id on results)
    * @returns {Array} All computed veset objects
    */
-  calculateFromRecords(records, settings, userId) {
+  calculateFromRecords(records, settings, userId, mechitzaAfterIds, encKey) {
     // Handle legacy calls where settings is just a posek string
     if (typeof settings === 'string') {
       settings = {
@@ -79,6 +79,17 @@ class VesetCalculationEngine {
       };
     }
 
+    // Load mechitzot if not provided and userId is available
+    if (!mechitzaAfterIds && userId) {
+      try {
+        const mechitzaRepo = require('../repositories/mechitzaRepository');
+        mechitzaAfterIds = mechitzaRepo.getDecryptedAfterIds(userId, encKey);
+      } catch (e) {
+        mechitzaAfterIds = [];
+      }
+    }
+    if (!mechitzaAfterIds) mechitzaAfterIds = [];
+
     // Compute all intervals (with +1 for halachic counting)
     const intervals = this._computeIntervals(records);
 
@@ -88,7 +99,7 @@ class VesetCalculationEngine {
       const record = records[i];
       // Ensure user_id is set (in case records come from memory without it)
       const recordWithUser = { ...record, user_id: userId };
-      const recordVestot = this._calculateForRecord(recordWithUser, records, i, intervals, settings);
+      const recordVestot = this._calculateForRecord(recordWithUser, records, i, intervals, settings, mechitzaAfterIds);
       allVestot.push(...recordVestot);
     }
 
@@ -99,39 +110,58 @@ class VesetCalculationEngine {
    * Calculate all vestot for a single record.
    * @private
    */
-  _calculateForRecord(record, allRecords, index, intervals, settings) {
+  _calculateForRecord(record, allRecords, index, intervals, settings, mechitzaAfterIds) {
     const vestot = [];
     const posek = settings.posek;
 
     // === Onah Beinonit (day 30 = onset + 29) — always both onahs ===
+    // NOT affected by mechitza
     const beinonitEntries = this._calcOnahBeinonit(record);
     vestot.push(...beinonitEntries);
 
     // === Onah Beinonit 31 (day 31 = onset + 30) — always both onahs ===
+    // NOT affected by mechitza
     if (settings.onah_beinonit_31) {
       const beinonit31Entries = this._calcOnahBeinonit31(record);
       vestot.push(...beinonit31Entries);
     }
 
+    // Find effective start index after latest mechitza (for haflagah only)
+    let effectiveStartIndex = 0;
+    if (mechitzaAfterIds && mechitzaAfterIds.length > 0) {
+      for (let j = index - 1; j >= 0; j--) {
+        if (mechitzaAfterIds.includes(allRecords[j].id)) {
+          effectiveStartIndex = j + 1;
+          break;
+        }
+      }
+    }
+
+    // Number of records available for haflagah (after mechitza)
+    const recordsAfterMechitza = index - effectiveStartIndex;
+
     // === Veset Haflagah (1st) ===
-    if (index >= 1) {
-      const haflagah1 = this._calcHaflagah1(record, allRecords, index, intervals, posek);
+    if (recordsAfterMechitza >= 1) {
+      const effectiveIntervals = intervals.slice(effectiveStartIndex, index);
+      const haflagah1 = this._calcHaflagah1WithIntervals(record, allRecords, index, effectiveIntervals, posek);
       if (haflagah1) vestot.push(haflagah1);
     }
 
     // === Veset Haflagah (2nd) ===
-    if (index >= 2) {
-      const haflagah2 = this._calcHaflagah2(record, allRecords, index, intervals, posek);
+    if (recordsAfterMechitza >= 2) {
+      const effectiveIntervals = intervals.slice(effectiveStartIndex, index);
+      const haflagah2 = this._calcHaflagah2WithIntervals(record, allRecords, index, effectiveIntervals, posek);
       if (haflagah2) vestot.push(haflagah2);
     }
 
     // === Veset Haflagah (3rd) - only if haflagah_shlishit setting ===
-    if (settings.haflagah_shlishit && index >= 3) {
-      const haflagah3 = this._calcHaflagah3(record, allRecords, index, intervals, posek);
+    if (settings.haflagah_shlishit && recordsAfterMechitza >= 3) {
+      const effectiveIntervals = intervals.slice(effectiveStartIndex, index);
+      const haflagah3 = this._calcHaflagah3WithIntervals(record, allRecords, index, effectiveIntervals, posek);
       if (haflagah3) vestot.push(haflagah3);
     }
 
-    // === Veset Hachodesh ===
+    // === Veset Hachodesh — NOT affected by mechitza ===
     const hachodesh = this._calcHachodesh(record, allRecords, index, posek, settings.hachodesh_overflow);
     if (hachodesh) vestot.push(hachodesh);
 
@@ -294,6 +324,110 @@ class VesetCalculationEngine {
     const currentInterval = intervalsUpToCurrent[intervalsUpToCurrent.length - 1];
     const prevInterval = intervalsUpToCurrent[intervalsUpToCurrent.length - 2];
     const prevPrevInterval = intervalsUpToCurrent[intervalsUpToCurrent.length - 3];
+
+    // Condition: the interval from 2 back is larger than both the last and current
+    if (!(prevPrevInterval > prevInterval && prevPrevInterval > currentInterval)) return null;
+
+    const targetRd = record.start_rd + prevPrevInterval;
+    const targetHeb = HebrewDateUtils.rd2heb(targetRd);
+    const targetGreg = HebrewDateUtils.rd2greg(targetRd);
+
+    return {
+      user_id: record.user_id,
+      source_record_id: record.id,
+      type: 'haflagah_3',
+      date: this._toISODate(targetGreg),
+      date_rd: targetRd,
+      heb_year: targetHeb.year,
+      heb_month: targetHeb.month,
+      heb_day: targetHeb.day,
+      onah: record.onah,
+      is_or_zarua: 0
+    };
+  }
+
+  // ========== Haflagah with explicit intervals (mechitza-aware) ==========
+
+  /**
+   * 1st Haflagah with explicit effective intervals.
+   * Same logic as _calcHaflagah1 but uses provided intervals instead of computing from index.
+   */
+  _calcHaflagah1WithIntervals(record, allRecords, index, effectiveIntervals, posek) {
+    if (effectiveIntervals.length === 0) return null;
+
+    if (posek === 'mechaber') {
+      if (!this._hasThreeConsecutiveIdentical(effectiveIntervals)) return null;
+    }
+
+    const lastInterval = effectiveIntervals[effectiveIntervals.length - 1];
+    const targetRd = record.start_rd + lastInterval;
+    const targetHeb = HebrewDateUtils.rd2heb(targetRd);
+    const targetGreg = HebrewDateUtils.rd2greg(targetRd);
+
+    return {
+      user_id: record.user_id,
+      source_record_id: record.id,
+      type: 'haflagah',
+      date: this._toISODate(targetGreg),
+      date_rd: targetRd,
+      heb_year: targetHeb.year,
+      heb_month: targetHeb.month,
+      heb_day: targetHeb.day,
+      onah: record.onah,
+      is_or_zarua: 0
+    };
+  }
+
+  /**
+   * 2nd Haflagah with explicit effective intervals.
+   * Same logic as _calcHaflagah2 but uses provided intervals.
+   */
+  _calcHaflagah2WithIntervals(record, allRecords, index, effectiveIntervals, posek) {
+    if (effectiveIntervals.length < 2) return null;
+
+    // Mechaber doesn't use haflagah_2 concept
+    if (posek === 'mechaber') return null;
+
+    const currentInterval = effectiveIntervals[effectiveIntervals.length - 1];
+    const previousInterval = effectiveIntervals[effectiveIntervals.length - 2];
+
+    // Condition: current haflagah interval <= previous haflagah interval
+    if (currentInterval > previousInterval) return null;
+
+    const targetRd = record.start_rd + previousInterval;
+    const targetHeb = HebrewDateUtils.rd2heb(targetRd);
+    const targetGreg = HebrewDateUtils.rd2greg(targetRd);
+
+    // Onah of the PREVIOUS record
+    const previousRecord = allRecords[index - 1];
+
+    return {
+      user_id: record.user_id,
+      source_record_id: record.id,
+      type: 'haflagah_2',
+      date: this._toISODate(targetGreg),
+      date_rd: targetRd,
+      heb_year: targetHeb.year,
+      heb_month: targetHeb.month,
+      heb_day: targetHeb.day,
+      onah: previousRecord.onah,
+      is_or_zarua: 0
+    };
+  }
+
+  /**
+   * 3rd Haflagah with explicit effective intervals.
+   * Same logic as _calcHaflagah3 but uses provided intervals.
+   */
+  _calcHaflagah3WithIntervals(record, allRecords, index, effectiveIntervals, posek) {
+    if (effectiveIntervals.length < 3) return null;
+
+    // Mechaber doesn't use this
+    if (posek === 'mechaber') return null;
+
+    const currentInterval = effectiveIntervals[effectiveIntervals.length - 1];
+    const prevInterval = effectiveIntervals[effectiveIntervals.length - 2];
+    const prevPrevInterval = effectiveIntervals[effectiveIntervals.length - 3];
 
     // Condition: the interval from 2 back is larger than both the last and current
     if (!(prevPrevInterval > prevInterval && prevPrevInterval > currentInterval)) return null;

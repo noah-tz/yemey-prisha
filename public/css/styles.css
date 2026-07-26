@@ -746,3 +746,18 @@ body {
   padding: 0.4rem 0.5rem;
   font-size: 0.85rem;
 }
+
+/* === Mechitza (haflagah reset divider) === */
+.mechitza-row {
+  background: transparent !important;
+}
+
+.mechitza-divider {
+  text-align: center;
+  padding: 0.3rem !important;
+  font-size: 0.8rem;
+  color: var(--color-error);
+  border-top: 2px dashed var(--color-error);
+  border-bottom: 2px dashed var(--color-error);
+  background: #FFF3F3 !important;
+}

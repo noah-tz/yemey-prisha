@@ -7,6 +7,8 @@ var History = (function() {
   'use strict';
 
   var cycles = [];
+  var mechitzot = [];
+  var mechitzotSet = new Set();
   var editingId = null;
 
   // Hebrew day names (gematria) - index 0 is unused, days are 1-30
@@ -158,15 +160,20 @@ var History = (function() {
   }
 
   function render() {
-    Api.get('/api/cycles')
-      .then(function(data) {
-        cycles = data.records || (Array.isArray(data) ? data : []);
-        renderTable();
-      })
-      .catch(function() {
-        cycles = [];
-        renderTable();
-      });
+    Promise.all([
+      Api.get('/api/cycles'),
+      Api.get('/api/mechitzot')
+    ]).then(function(results) {
+      cycles = results[0].records || (Array.isArray(results[0]) ? results[0] : []);
+      mechitzot = results[1].mechitzot || [];
+      mechitzotSet = new Set(mechitzot.map(function(m) { return m.after_record_id; }));
+      renderTable();
+    }).catch(function() {
+      cycles = [];
+      mechitzot = [];
+      mechitzotSet = new Set();
+      renderTable();
+    });
   }
 
   function renderTable() {
@@ -232,8 +239,31 @@ var History = (function() {
       });
       actionsCell.appendChild(delBtn);
 
+      // Mechitza button
+      var mechitzaBtn = document.createElement('button');
+      mechitzaBtn.className = 'btn btn-secondary';
+      mechitzaBtn.style.fontSize = '0.7rem';
+      mechitzaBtn.style.padding = '0.2rem 0.4rem';
+      mechitzaBtn.textContent = '✂️';
+      mechitzaBtn.title = 'הוסף מחיצה אחרי וסת זו';
+      mechitzaBtn.addEventListener('click', (function(cycleId) {
+        return function() { addMechitza(cycleId); };
+      })(cycle.id));
+      actionsCell.appendChild(mechitzaBtn);
+
       row.appendChild(actionsCell);
       tbody.appendChild(row);
+
+      // Show mechitza divider if one exists after this record
+      if (mechitzotSet.has(cycle.id)) {
+        var dividerRow = document.createElement('tr');
+        dividerRow.className = 'mechitza-row';
+        dividerRow.innerHTML = '<td colspan="5" class="mechitza-divider">✂️ מחיצה — איפוס ספירת הפלגות <button class="btn btn-danger" style="font-size:0.65rem;padding:0.1rem 0.3rem;margin-right:0.5rem;">הסר</button></td>';
+        dividerRow.querySelector('button').addEventListener('click', (function(cycleId) {
+          return function() { removeMechitza(cycleId); };
+        })(cycle.id));
+        tbody.appendChild(dividerRow);
+      }
     });
   }
 
@@ -481,6 +511,21 @@ var History = (function() {
       .catch(function(err) {
         errorEl.textContent = err.message || 'שגיאה בייבוא';
       });
+  }
+
+  function addMechitza(afterRecordId) {
+    Api.post('/api/mechitzot', { afterRecordId: afterRecordId })
+      .then(function() { render(); })
+      .catch(function(err) { alert(err.message || 'שגיאה'); });
+  }
+
+  function removeMechitza(afterRecordId) {
+    // Find the mechitza with this after_record_id and delete it
+    var mechitza = mechitzot.find(function(m) { return m.after_record_id === afterRecordId; });
+    if (!mechitza) return;
+    Api.del('/api/mechitzot/' + mechitza.id)
+      .then(function() { render(); })
+      .catch(function(err) { alert(err.message || 'שגיאה'); });
   }
 
   return {

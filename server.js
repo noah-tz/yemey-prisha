@@ -59,6 +59,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/cycles', require('./routes/cycles'));
 app.use('/api/vestot', require('./routes/vestot'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/mechitzot', require('./routes/mechitzot'));
 app.use('/api/docs', require('./routes/api-docs'));
 
 // Fallback: serve index.html for SPA routing
