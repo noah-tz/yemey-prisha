@@ -1,7 +1,7 @@
 const db = require('../db');
 const crypto = require('crypto');
 
-const SETTINGS_COLUMNS = 'id, email, posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, created_at';
+const SETTINGS_COLUMNS = 'id, email, posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, reminder_enabled, reminder_email, created_at';
 
 /**
  * Create a new user and return the user object (without password_hash).
@@ -74,7 +74,7 @@ function updatePosek(userId, posek) {
  * @returns {Object} updated user
  */
 function updateSettings(userId, settings) {
-  const allowedFields = ['posek', 'onah_beinonit_31', 'or_zarua', 'haflagah_shlishit', 'hachodesh_overflow'];
+  const allowedFields = ['posek', 'onah_beinonit_31', 'or_zarua', 'haflagah_shlishit', 'hachodesh_overflow', 'reminder_enabled', 'reminder_email'];
   const setClauses = [];
   const values = [];
 
@@ -86,6 +86,9 @@ function updateSettings(userId, settings) {
         if (val !== 'rama' && val !== 'mechaber') {
           throw new Error("Invalid posek value. Must be 'rama' or 'mechaber'.");
         }
+      } else if (field === 'reminder_email') {
+        // String field — store as-is (empty string becomes null)
+        val = val || null;
       } else {
         // Boolean fields stored as INTEGER 0/1
         val = val ? 1 : 0;

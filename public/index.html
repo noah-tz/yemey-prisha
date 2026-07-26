@@ -239,6 +239,24 @@
         </div>
 
         <div class="card" style="margin-top: 1.5rem;">
+          <h3>תזכורות באימייל</h3>
+          <p class="settings-description">
+            קבל תזכורת יומית לפני ימי פרישה (נשלח ב-16:00).
+          </p>
+          <div class="toggle-group">
+            <label class="toggle-option">
+              <input type="checkbox" id="setting-reminder-enabled">
+              <span>הפעל תזכורות באימייל</span>
+            </label>
+          </div>
+          <div class="form-group" style="margin-top: 0.75rem;">
+            <label for="setting-reminder-email">כתובת מייל לתזכורות (אופציונלי — ברירת מחדל: מייל ההתחברות)</label>
+            <input type="email" id="setting-reminder-email" placeholder="example@gmail.com" dir="ltr">
+          </div>
+          <div id="reminder-message" class="success-message"></div>
+        </div>
+
+        <div class="card" style="margin-top: 1.5rem;">
           <h3>מפתח API</h3>
           <p class="settings-description">
             מפתח API מאפשר גישה תכנותית למערכת (לכלי AI, אוטומציות וכו').

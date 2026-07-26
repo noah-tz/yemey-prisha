@@ -46,7 +46,9 @@ router.get('/', (req, res) => {
       onah_beinonit_31: !!user.onah_beinonit_31,
       or_zarua: !!user.or_zarua,
       haflagah_shlishit: !!user.haflagah_shlishit,
-      hachodesh_overflow: !!user.hachodesh_overflow
+      hachodesh_overflow: !!user.hachodesh_overflow,
+      reminder_enabled: !!user.reminder_enabled,
+      reminder_email: user.reminder_email || ''
     });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });
@@ -60,7 +62,7 @@ router.get('/', (req, res) => {
  */
 router.put('/', (req, res) => {
   try {
-    const { posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow } = req.body;
+    const { posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, reminder_enabled, reminder_email } = req.body;
 
     // Validate posek if provided
     if (posek !== undefined && posek !== 'rama' && posek !== 'mechaber') {
@@ -74,6 +76,8 @@ router.put('/', (req, res) => {
     if (or_zarua !== undefined) settingsUpdate.or_zarua = or_zarua;
     if (haflagah_shlishit !== undefined) settingsUpdate.haflagah_shlishit = haflagah_shlishit;
     if (hachodesh_overflow !== undefined) settingsUpdate.hachodesh_overflow = hachodesh_overflow;
+    if (reminder_enabled !== undefined) settingsUpdate.reminder_enabled = reminder_enabled;
+    if (reminder_email !== undefined) settingsUpdate.reminder_email = reminder_email;
 
     if (Object.keys(settingsUpdate).length === 0) {
       return res.status(400).json({ error: 'No settings provided' });
@@ -81,8 +85,12 @@ router.put('/', (req, res) => {
 
     userRepository.updateSettings(req.userId, settingsUpdate);
 
-    // Recalculate all vestot with new settings (encryption-aware)
-    cycleService.recalculateVestot(req.userId, req.encKey);
+    // Recalculate all vestot with new settings (encryption-aware) — only if halachic settings changed
+    const halachicFields = ['posek', 'onah_beinonit_31', 'or_zarua', 'haflagah_shlishit', 'hachodesh_overflow'];
+    const hasHalachicChange = halachicFields.some(f => settingsUpdate[f] !== undefined);
+    if (hasHalachicChange) {
+      cycleService.recalculateVestot(req.userId, req.encKey);
+    }
 
     // Get updated user for response
     const user = userRepository.findById(req.userId);
@@ -93,7 +101,9 @@ router.put('/', (req, res) => {
       or_zarua: !!user.or_zarua,
       haflagah_shlishit: !!user.haflagah_shlishit,
       hachodesh_overflow: !!user.hachodesh_overflow,
-      message: 'Settings updated, vestot recalculated'
+      reminder_enabled: !!user.reminder_enabled,
+      reminder_email: user.reminder_email || '',
+      message: hasHalachicChange ? 'Settings updated, vestot recalculated' : 'Settings updated'
     });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });

@@ -33,6 +33,24 @@ var Settings = (function() {
       }
     });
 
+    // Reminder settings
+    var reminderCheckbox = document.getElementById('setting-reminder-enabled');
+    if (reminderCheckbox) {
+      reminderCheckbox.addEventListener('change', function() {
+        saveReminderSettings();
+      });
+    }
+    var reminderEmailInput = document.getElementById('setting-reminder-email');
+    if (reminderEmailInput) {
+      var reminderTimeout = null;
+      reminderEmailInput.addEventListener('input', function() {
+        clearTimeout(reminderTimeout);
+        reminderTimeout = setTimeout(function() {
+          saveReminderSettings();
+        }, 1000);
+      });
+    }
+
     // API key management
     document.getElementById('reveal-api-key-btn').addEventListener('click', function() {
       apiKeyRevealed = true;
@@ -138,6 +156,12 @@ var Settings = (function() {
         if (orzarua) orzarua.checked = data.or_zarua !== false;
         if (haflagah3) haflagah3.checked = data.haflagah_shlishit !== false;
         if (hachodeshOverflow) hachodeshOverflow.checked = !!data.hachodesh_overflow;
+
+        // Reminder settings
+        var reminderEnabled = document.getElementById('setting-reminder-enabled');
+        var reminderEmail = document.getElementById('setting-reminder-email');
+        if (reminderEnabled) reminderEnabled.checked = !!data.reminder_enabled;
+        if (reminderEmail) reminderEmail.value = data.reminder_email || '';
       })
       .catch(function() {
         // Default to rama and all defaults
@@ -181,6 +205,35 @@ var Settings = (function() {
           msgEl.textContent = '';
           msgEl.className = 'success-message';
         }, 3000);
+      });
+  }
+
+  function saveReminderSettings() {
+    var reminderEnabled = document.getElementById('setting-reminder-enabled');
+    var reminderEmail = document.getElementById('setting-reminder-email');
+
+    var payload = {
+      reminder_enabled: reminderEnabled ? reminderEnabled.checked : false,
+      reminder_email: reminderEmail ? reminderEmail.value.trim() : ''
+    };
+
+    var msgEl = document.getElementById('reminder-message');
+    if (msgEl) msgEl.textContent = '';
+
+    Api.put('/api/settings', payload)
+      .then(function() {
+        if (msgEl) {
+          msgEl.className = 'success-message';
+          msgEl.textContent = 'הגדרות תזכורת נשמרו ✓';
+          setTimeout(function() { msgEl.textContent = ''; }, 3000);
+        }
+      })
+      .catch(function(err) {
+        if (msgEl) {
+          msgEl.className = 'error-message';
+          msgEl.textContent = err.message || 'שגיאה בשמירה';
+          setTimeout(function() { msgEl.textContent = ''; msgEl.className = 'success-message'; }, 3000);
+        }
       });
   }
 

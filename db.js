@@ -196,6 +196,14 @@ if (vesetDatesSql && vesetDatesSql.sql && vesetDatesSql.sql.includes("CHECK (ona
   } catch(e) {}
 }
 
+// Migration: add reminder settings columns to users table
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN reminder_enabled INTEGER NOT NULL DEFAULT 0`);
+} catch(e) {}
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN reminder_email TEXT`);
+} catch(e) {}
+
 // Migration: mechitzot table for haflagah reset boundaries
 db.exec(`
   CREATE TABLE IF NOT EXISTS mechitzot (
