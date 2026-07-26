@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  vestot:
+    build: .
+    container_name: luach-vestot
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - vestot-data:/data
+    environment:
+      - PORT=3000
+      - DB_PATH=/data/vestot.db
+      - SESSION_SECRET=${SESSION_SECRET}
+      - ALLOW_REGISTRATION=false
+      - NODE_ENV=production
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=10M
+    cap_drop:
+      - ALL
+    networks:
+      - web-proxy
+
+volumes:
+  vestot-data:
+
+networks:
+  web-proxy:
+    external: true

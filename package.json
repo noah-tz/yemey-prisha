@@ -1,0 +1,26 @@
+{
+  "name": "yemey-prisha",
+  "version": "1.0.0",
+  "description": "Luach Vestot - Self-hosted niddah cycle tracking and veset calculation application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "niddah",
+    "vestot",
+    "luach",
+    "hebrew-calendar"
+  ],
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "bcrypt": "5.1.1",
+    "better-sqlite3": "11.7.0",
+    "better-sqlite3-session-store": "0.1.0",
+    "express": "4.21.2",
+    "express-rate-limit": "^7.4.1",
+    "express-session": "1.18.1"
+  }
+}

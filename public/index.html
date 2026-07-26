@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>לוח וסתות</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <nav id="main-nav" class="nav-bar" style="display:none;">
+    <span class="nav-brand">לוח וסתות</span>
+    <div class="nav-links">
+      <a href="#calendar" class="nav-link" data-view="calendar">לוח</a>
+      <a href="#history" class="nav-link" data-view="history">היסטוריה</a>
+      <a href="#settings" class="nav-link" data-view="settings">הגדרות</a>
+      <a href="#" id="logout-btn" class="nav-link nav-logout">יציאה</a>
+    </div>
+  </nav>
+
+  <main id="app">
+    <!-- Auth View -->
+    <section id="view-auth" class="view">
+      <div class="auth-container">
+        <h1 class="auth-title">לוח וסתות</h1>
+
+        <div id="auth-login">
+          <h2>כניסה</h2>
+          <form id="login-form" class="auth-form">
+            <div class="form-group">
+              <label for="login-email">דוא״ל</label>
+              <input type="email" id="login-email" required autocomplete="email">
+            </div>
+            <div class="form-group">
+              <label for="login-password">סיסמה</label>
+              <input type="password" id="login-password" required autocomplete="current-password">
+            </div>
+            <div id="login-error" class="error-message" role="alert"></div>
+            <button type="submit" class="btn btn-primary">כניסה</button>
+          </form>
+          <p class="auth-switch">אין לך חשבון? <a href="#" id="show-register">הרשמה</a></p>
+        </div>
+
+        <div id="auth-register" style="display:none;">
+          <h2>הרשמה</h2>
+          <form id="register-form" class="auth-form">
+            <div class="form-group">
+              <label for="register-email">דוא״ל</label>
+              <input type="email" id="register-email" required autocomplete="email">
+            </div>
+            <div class="form-group">
+              <label for="register-password">סיסמה</label>
+              <input type="password" id="register-password" required autocomplete="new-password">
+            </div>
+            <div class="form-group">
+              <label for="register-confirm">אימות סיסמה</label>
+              <input type="password" id="register-confirm" required autocomplete="new-password">
+            </div>
+            <div id="register-error" class="error-message" role="alert"></div>
+            <button type="submit" class="btn btn-primary">הרשמה</button>
+          </form>
+          <p class="auth-switch">יש לך חשבון? <a href="#" id="show-login">כניסה</a></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Calendar View -->
+    <section id="view-calendar" class="view" style="display:none;">
+      <div class="calendar-container">
+        <div class="calendar-header">
+          <button id="cal-prev" class="btn btn-icon" aria-label="חודש קודם">&#9654;</button>
+          <h2 id="cal-month-title"></h2>
+          <button id="cal-next" class="btn btn-icon" aria-label="חודש הבא">&#9664;</button>
+        </div>
+        <div class="calendar-grid">
+          <div class="calendar-day-name">ראשון</div>
+          <div class="calendar-day-name">שני</div>
+          <div class="calendar-day-name">שלישי</div>
+          <div class="calendar-day-name">רביעי</div>
+          <div class="calendar-day-name">חמישי</div>
+          <div class="calendar-day-name">שישי</div>
+          <div class="calendar-day-name">שבת</div>
+        </div>
+        <div id="cal-days" class="calendar-grid calendar-days"></div>
+        <div class="calendar-legend">
+          <span class="legend-item"><span class="legend-dot dot-beinonit"></span>עונה בינונית</span>
+          <span class="legend-item"><span class="legend-dot dot-haflagah"></span>הפלגה</span>
+          <span class="legend-item"><span class="legend-dot dot-hachodesh"></span>יום החודש</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- History View -->
+    <section id="view-history" class="view" style="display:none;">
+      <div class="history-container">
+        <h2>היסטוריית וסתות</h2>
+
+        <div id="cycle-form-container" class="card">
+          <h3 id="cycle-form-title">הוספת וסת</h3>
+          <form id="cycle-form" class="cycle-form">
+            <input type="hidden" id="cycle-edit-id">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cycle-heb-day">יום</label>
+                <select id="cycle-heb-day" required>
+                  <option value="">—</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="cycle-heb-month">חודש</label>
+                <select id="cycle-heb-month" required>
+                  <option value="">—</option>
+                  <option value="7">תשרי</option>
+                  <option value="8">חשוון</option>
+                  <option value="9">כסלו</option>
+                  <option value="10">טבת</option>
+                  <option value="11">שבט</option>
+                  <option value="12">אדר</option>
+                  <option value="13">אדר ב׳</option>
+                  <option value="1">ניסן</option>
+                  <option value="2">אייר</option>
+                  <option value="3">סיוון</option>
+                  <option value="4">תמוז</option>
+                  <option value="5">אב</option>
+                  <option value="6">אלול</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="cycle-heb-year">שנה</label>
+                <select id="cycle-heb-year" required></select>
+              </div>
+              <div class="form-group">
+                <label for="cycle-onah">עונה</label>
+                <select id="cycle-onah" required>
+                  <option value="day">יום ☀️</option>
+                  <option value="night">לילה 🌙</option>
+                </select>
+              </div>
+            </div>
+            <div id="cycle-form-error" class="error-message" role="alert"></div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="cycle-submit-btn">הוסף</button>
+              <button type="button" class="btn btn-secondary" id="cycle-cancel-btn" style="display:none;">ביטול</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card" style="margin-top: 1rem;">
+          <h3>ייבוא וסתות קודמות</h3>
+          <p class="settings-description">הוסף שורות עם תאריך עברי ועונה. לחץ + להוספת שורה נוספת.</p>
+          <div id="import-entries">
+            <!-- Dynamic entries will be added here -->
+          </div>
+          <div class="form-actions" style="margin-top: 0.75rem;">
+            <button class="btn btn-secondary" id="import-add-row-btn" type="button">+ הוסף שורה</button>
+          </div>
+          <div id="import-error" class="error-message" role="alert"></div>
+          <div id="import-success" class="success-message" role="status"></div>
+          <div class="form-actions" style="margin-top: 0.75rem;">
+            <button class="btn btn-primary" id="import-btn" type="button">ייבוא</button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table id="history-table" class="data-table">
+            <thead>
+              <tr>
+                <th>תאריך עברי</th>
+                <th>תאריך לועזי</th>
+                <th>עונה</th>
+                <th>הפלגה (ימים)</th>
+                <th>פעולות</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody"></tbody>
+          </table>
+          <p id="history-empty" class="empty-state" style="display:none;">אין וסתות רשומות עדיין.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings View -->
+    <section id="view-settings" class="view" style="display:none;">
+      <div class="settings-container">
+        <h2>הגדרות</h2>
+        <div class="card">
+          <h3>בחירת פוסק</h3>
+          <p class="settings-description">
+            הבחירה בפוסק משפיעה על אופן חישוב הווסתות ועל הימים שבהם יש לפרוש.
+          </p>
+          <div class="radio-group" role="radiogroup" aria-label="בחירת פוסק">
+            <label class="radio-option">
+              <input type="radio" name="posek" value="rama">
+              <span class="radio-label">
+                <strong>רמ״א</strong>
+                <small>מנהג אשכנז — מחמיר יותר בחישוב הווסתות</small>
+              </span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="posek" value="mechaber">
+              <span class="radio-label">
+                <strong>מחבר</strong>
+                <small>מנהג ספרד — פוסק לפי השולחן ערוך</small>
+              </span>
+            </label>
+          </div>
+          <div id="settings-message" class="success-message" role="status"></div>
+        </div>
+
+        <div class="card" style="margin-top: 1.5rem;">
+          <h3>הגדרות מתקדמות</h3>
+          <div class="toggle-group">
+            <label class="toggle-option">
+              <input type="checkbox" id="setting-beinonit31" checked>
+              <span>עונה בינונית 31 — פרישה גם ביום ה-31</span>
+            </label>
+            <label class="toggle-option">
+              <input type="checkbox" id="setting-orzarua" checked>
+              <span>עונת אור זרוע — פרישה גם בעונה ההפוכה</span>
+            </label>
+            <label class="toggle-option">
+              <input type="checkbox" id="setting-haflagah3" checked>
+              <span>הפלגה שלישית — זכירת שלוש הפלגות אחרונות</span>
+            </label>
+            <label class="toggle-option">
+              <input type="checkbox" id="setting-hachodesh-overflow">
+              <span>וסת החודש בל' מלא לפני חסר — פרישה בא' של החודש הבא</span>
+            </label>
+          </div>
+          <div id="advanced-settings-message" class="success-message" role="status"></div>
+        </div>
+
+        <div class="card" style="margin-top: 1.5rem;">
+          <h3>מפתח API</h3>
+          <p class="settings-description">
+            מפתח API מאפשר גישה תכנותית למערכת (לכלי AI, אוטומציות וכו').
+            <a href="#api-docs" class="settings-link">תיעוד API →</a>
+          </p>
+          <div class="api-key-section">
+            <div class="api-key-display" id="api-key-display">
+              <code id="api-key-value">••••••••••••••••••••</code>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary" id="reveal-api-key-btn">צפה ב-API Key</button>
+              <button class="btn btn-secondary" id="hide-api-key-btn" style="display:none;">הסתר</button>
+              <button class="btn btn-secondary" id="copy-api-key-btn" style="display:none;">העתק</button>
+              <button class="btn btn-primary" id="generate-api-key-btn">צור מפתח חדש</button>
+            </div>
+            <div id="api-key-message" class="success-message" role="status"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- API Documentation View -->
+    <section id="view-api-docs" class="view" style="display:none;">
+      <div class="docs-container">
+        <h2>תיעוד API</h2>
+        <p class="settings-description">ה-API מאפשר גישה תכנותית לכל הפונקציות של לוח וסתות.</p>
+
+        <div class="card">
+          <h3>אימות (Authentication)</h3>
+          <p>שלח את מפתח ה-API בכל בקשה באחד מהאופנים:</p>
+          <div class="code-block">
+            <code>X-API-Key: vst_your_key_here</code>
+          </div>
+          <p style="margin-top: 0.5rem;">או:</p>
+          <div class="code-block">
+            <code>Authorization: Bearer vst_your_key_here</code>
+          </div>
+          <p style="margin-top: 0.75rem; color: var(--color-text-secondary); font-size: 0.85rem;">
+            ליצירת מפתח: <a href="#settings">הגדרות</a> → מפתח API → צור מפתח חדש
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>📋 וסתות (Cycles)</h3>
+          
+          <div class="endpoint">
+            <span class="method get">GET</span>
+            <code>/api/cycles</code>
+            <p>רשימת כל הוסתות</p>
+          </div>
+
+          <div class="endpoint">
+            <span class="method post">POST</span>
+            <code>/api/cycles</code>
+            <p>הוספת וסת חדשה</p>
+            <div class="code-block">
+<pre>{
+  "startDate": "2025-08-30",
+  "onah": "day",        // "day" או "night"
+  "endDate": null,      // אופציונלי
+  "inputFormat": "gregorian"  // או "hebrew"
+}
+
+// קלט עברי:
+{
+  "startDateHeb": { "year": 5786, "month": 7, "day": 6 },
+  "onah": "night",
+  "inputFormat": "hebrew"
+}</pre>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <span class="method post">POST</span>
+            <code>/api/cycles/import</code>
+            <p>ייבוא מרובה של וסתות קודמות</p>
+            <div class="code-block">
+<pre>// Body:
+{
+  "records": [
+    { "startDate": "2025-08-30", "onah": "day" },
+    { "startDate": "2025-09-28", "onah": "night" },
+    { "startDate": "2025-10-28", "onah": "night" },
+    { "startDate": "2025-11-23", "onah": "day" }
+  ]
+}
+
+// Response:
+{
+  "imported": 4,
+  "skipped": 0,
+  "errors": []
+}
+
+// Format per record:
+// startDate: YYYY-MM-DD (required)
+// onah: "day" or "night" (required)
+// endDate: YYYY-MM-DD (optional)
+// Max 100 records per request</pre>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <span class="method put">PUT</span>
+            <code>/api/cycles/:id</code>
+            <p>עריכת וסת קיימת</p>
+          </div>
+
+          <div class="endpoint">
+            <span class="method delete">DELETE</span>
+            <code>/api/cycles/:id</code>
+            <p>מחיקת וסת</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>📅 ימי פרישה (Vestot)</h3>
+          
+          <div class="endpoint">
+            <span class="method get">GET</span>
+            <code>/api/vestot</code>
+            <p>כל ימי הפרישה המחושבים</p>
+            <div class="code-block">
+<pre>// תגובה:
+{
+  "vestot": [
+    {
+      "id": 1,
+      "type": "onah_beinonit",
+      "date": "2025-09-28",
+      "hebrewDate": { "year": 5786, "month": 7, "day": 6 },
+      "onah": "day",
+      "is_or_zarua": false,
+      "sourceRecordId": 1
+    }
+  ]
+}
+
+// סוגי וסתות:
+// onah_beinonit - עונה בינונית (יום 30)
+// onah_beinonit_31 - עונה בינונית 31
+// haflagah - הפלגה ראשונה
+// haflagah_2 - הפלגה שנייה
+// haflagah_3 - הפלגה שלישית
+// hachodesh - וסת החודש</pre>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <span class="method get">GET</span>
+            <code>/api/vestot/calendar?from=2025-09-01&amp;to=2025-09-30</code>
+            <p>ימי פרישה בטווח תאריכים</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>⚙️ הגדרות (Settings)</h3>
+          
+          <div class="endpoint">
+            <span class="method get">GET</span>
+            <code>/api/settings</code>
+            <p>הגדרות נוכחיות</p>
+          </div>
+
+          <div class="endpoint">
+            <span class="method put">PUT</span>
+            <code>/api/settings</code>
+            <p>עדכון הגדרות (שולחים רק את מה שרוצים לשנות)</p>
+            <div class="code-block">
+<pre>{
+  "posek": "rama",            // "rama" או "mechaber"
+  "onah_beinonit_31": true,   // עונה בינונית 31
+  "or_zarua": true,           // עונת אור זרוע
+  "haflagah_shlishit": true,  // הפלגה שלישית
+  "hachodesh_overflow": false  // וסת החודש בל' מלא
+}</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>💡 דוגמה מלאה (cURL)</h3>
+          <div class="code-block">
+<pre># רשימת וסתות
+curl -H "X-API-Key: vst_your_key" \
+  https://veset.dina-ins.co.il/api/cycles
+
+# הוספת וסת
+curl -X POST -H "X-API-Key: vst_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{"startDate":"2025-08-30","onah":"day"}' \
+  https://veset.dina-ins.co.il/api/cycles
+
+# ימי פרישה לחודש
+curl -H "X-API-Key: vst_your_key" \
+  "https://veset.dina-ins.co.il/api/vestot/calendar?from=2025-09-01&to=2025-09-30"</pre>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Privacy Policy View -->
+    <section id="view-privacy" class="view" style="display:none;">
+      <div class="settings-container">
+        <h2>מדיניות פרטיות</h2>
+        <div class="card">
+          <p style="line-height: 1.8; font-size: 1rem;">
+            האתר משתמש בעוגיית סשן טכנית (httpOnly) לצורך שמירת ההתחברות בלבד. 
+            האתר אינו משתמש בעוגיות מעקב, פרסום או אנליטיקה של צד שלישי.
+          </p>
+        </div>
+        <a href="#calendar" class="btn btn-secondary" style="margin-top: 1rem;">חזרה</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer id="app-footer" class="app-footer">
+    <a href="#api-docs" class="footer-link">תיעוד API</a>
+    <span class="footer-sep">|</span>
+    <a href="#privacy" class="footer-link">מדיניות פרטיות</a>
+  </footer>
+
+  <script src="/lib/hebrew-date.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/calendar.js"></script>
+  <script src="/js/history.js"></script>
+  <script src="/js/settings.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
