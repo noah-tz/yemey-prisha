@@ -1,8 +1,11 @@
+'use strict';
+
 const express = require('express');
 const router = express.Router();
 const requireAuth = require('../middleware/auth');
 const vesetRepository = require('../repositories/vesetRepository');
 const HebrewDateUtils = require('../services/hebrewDateUtils');
+const { decryptVesetDate } = require('../services/encryptionHelpers');
 
 // All routes require authentication
 router.use(requireAuth);
@@ -14,7 +17,8 @@ router.use(requireAuth);
 router.get('/', (req, res) => {
   try {
     const vestot = vesetRepository.findByUser(req.userId);
-    return res.json({ vestot: formatVestot(vestot) });
+    const decrypted = vestot.map(v => decryptVesetDate(v, req.encKey));
+    return res.json({ vestot: formatVestot(decrypted) });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });
   }
@@ -33,7 +37,8 @@ router.get('/calendar', (req, res) => {
     const fromRd = HebrewDateUtils.greg2rd(new Date(from));
     const toRd = HebrewDateUtils.greg2rd(new Date(to));
     const vestot = vesetRepository.findByDateRange(req.userId, fromRd, toRd);
-    return res.json({ vestot: formatVestot(vestot) });
+    const decrypted = vestot.map(v => decryptVesetDate(v, req.encKey));
+    return res.json({ vestot: formatVestot(decrypted) });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });
   }

@@ -46,20 +46,50 @@ class VesetCalculationEngine {
     // 2. Get all cycle_records sorted by start_rd ascending
     const records = cycleRepository.findByUser(userId);
 
-    // 3. Compute all intervals (with +1 for halachic counting)
+    // 3. Calculate using the shared method
+    const allVestot = this.calculateFromRecords(records, settings, userId);
+
+    // 4. Save all calculated vestot
+    if (allVestot.length > 0) {
+      vesetRepository.saveAll(userId, allVestot);
+    }
+
+    return allVestot;
+  }
+
+  /**
+   * Calculate all vestot from a list of (decrypted) cycle records.
+   * This method does NOT touch the database — it's purely computational.
+   * Used by cycleService for encryption-aware recalculation.
+   *
+   * @param {Array} records - Decrypted cycle records sorted by start_rd ascending
+   * @param {Object} settings - { posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow }
+   * @param {number} userId - User ID (for setting user_id on results)
+   * @returns {Array} All computed veset objects
+   */
+  calculateFromRecords(records, settings, userId) {
+    // Handle legacy calls where settings is just a posek string
+    if (typeof settings === 'string') {
+      settings = {
+        posek: settings,
+        onah_beinonit_31: 1,
+        or_zarua: 1,
+        haflagah_shlishit: 1,
+        hachodesh_overflow: 0
+      };
+    }
+
+    // Compute all intervals (with +1 for halachic counting)
     const intervals = this._computeIntervals(records);
 
-    // 4. For each record, calculate all applicable vestot
+    // For each record, calculate all applicable vestot
     const allVestot = [];
     for (let i = 0; i < records.length; i++) {
       const record = records[i];
-      const recordVestot = this._calculateForRecord(record, records, i, intervals, settings);
+      // Ensure user_id is set (in case records come from memory without it)
+      const recordWithUser = { ...record, user_id: userId };
+      const recordVestot = this._calculateForRecord(recordWithUser, records, i, intervals, settings);
       allVestot.push(...recordVestot);
-    }
-
-    // 5. Save all calculated vestot
-    if (allVestot.length > 0) {
-      vesetRepository.saveAll(userId, allVestot);
     }
 
     return allVestot;

@@ -7,13 +7,15 @@ const SETTINGS_COLUMNS = 'id, email, posek, onah_beinonit_31, or_zarua, haflagah
  * Create a new user and return the user object (without password_hash).
  * @param {string} email
  * @param {string} passwordHash
+ * @param {string} [encSalt] - hex-encoded encryption salt
+ * @param {string} [encKeyEncrypted] - wrapped encryption key for API/cron access
  * @returns {Object}
  */
-function create(email, passwordHash) {
+function create(email, passwordHash, encSalt, encKeyEncrypted) {
   const stmt = db.prepare(
-    'INSERT INTO users (email, password_hash) VALUES (?, ?)'
+    'INSERT INTO users (email, password_hash, enc_salt, enc_key_encrypted) VALUES (?, ?, ?, ?)'
   );
-  const result = stmt.run(email, passwordHash);
+  const result = stmt.run(email, passwordHash, encSalt || null, encKeyEncrypted || null);
 
   return db.prepare(
     `SELECT ${SETTINGS_COLUMNS} FROM users WHERE id = ?`
@@ -21,13 +23,13 @@ function create(email, passwordHash) {
 }
 
 /**
- * Find a user by email. Returns the full row including password_hash (for auth).
+ * Find a user by email. Returns the full row including password_hash and enc fields (for auth).
  * @param {string} email
  * @returns {Object|undefined}
  */
 function findByEmail(email) {
   const stmt = db.prepare(
-    `SELECT id, email, password_hash, posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, created_at FROM users WHERE email = ?`
+    `SELECT id, email, password_hash, enc_salt, enc_key_encrypted, posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, created_at FROM users WHERE email = ?`
   );
   return stmt.get(email);
 }
@@ -105,14 +107,14 @@ function updateSettings(userId, settings) {
 }
 
 /**
- * Find a user by API key. Returns user without password_hash.
+ * Find a user by API key. Returns user without password_hash but with enc_key_encrypted.
  * @param {string} apiKey
  * @returns {Object|undefined}
  */
 function findByApiKey(apiKey) {
   if (!apiKey) return undefined;
   const stmt = db.prepare(
-    `SELECT ${SETTINGS_COLUMNS} FROM users WHERE api_key = ?`
+    `SELECT ${SETTINGS_COLUMNS}, enc_key_encrypted FROM users WHERE api_key = ?`
   );
   return stmt.get(apiKey);
 }
@@ -138,6 +140,17 @@ function getApiKey(userId) {
   return row ? row.api_key : null;
 }
 
+/**
+ * Update encryption fields for a user (enc_salt and enc_key_encrypted).
+ * @param {number} userId
+ * @param {string} encSalt - hex-encoded salt
+ * @param {string} encKeyEncrypted - wrapped encryption key
+ */
+function updateEncryption(userId, encSalt, encKeyEncrypted) {
+  db.prepare('UPDATE users SET enc_salt = ?, enc_key_encrypted = ? WHERE id = ?')
+    .run(encSalt, encKeyEncrypted, userId);
+}
+
 module.exports = {
   create,
   findByEmail,
@@ -147,4 +160,5 @@ module.exports = {
   findByApiKey,
   generateApiKey,
   getApiKey,
+  updateEncryption,
 };

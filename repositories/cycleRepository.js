@@ -8,8 +8,8 @@ const db = require('../db');
  */
 function create(userId, record) {
   const stmt = db.prepare(`
-    INSERT INTO cycle_records (user_id, start_date, start_rd, start_heb_year, start_heb_month, start_heb_day, onah, end_date)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO cycle_records (user_id, start_date, start_rd, start_heb_year, start_heb_month, start_heb_day, onah, end_date, enc_heb)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const result = stmt.run(
     userId,
@@ -19,7 +19,8 @@ function create(userId, record) {
     record.start_heb_month,
     record.start_heb_day,
     record.onah,
-    record.end_date || null
+    record.end_date || null,
+    record.enc_heb || null
   );
 
   return db.prepare(
@@ -35,7 +36,7 @@ function create(userId, record) {
  * @returns {{ id: number, user_id: number, start_date: string, start_rd: number, start_heb_year: number, start_heb_month: number, start_heb_day: number, onah: string, end_date: string|null, created_at: string } | undefined}
  */
 function update(userId, id, updates) {
-  const allowedFields = ['start_date', 'start_rd', 'start_heb_year', 'start_heb_month', 'start_heb_day', 'onah', 'end_date'];
+  const allowedFields = ['start_date', 'start_rd', 'start_heb_year', 'start_heb_month', 'start_heb_day', 'onah', 'end_date', 'enc_heb'];
   const setClauses = [];
   const values = [];
 
@@ -115,6 +116,15 @@ function findOverlapping(userId, startRd, endRd) {
   return stmt.all(userId, startRd);
 }
 
+/**
+ * Update the enc_heb column for a cycle record.
+ * @param {number} recordId
+ * @param {string} encHeb - encrypted Hebrew date bundle
+ */
+function updateEncHeb(recordId, encHeb) {
+  db.prepare('UPDATE cycle_records SET enc_heb = ? WHERE id = ?').run(encHeb, recordId);
+}
+
 module.exports = {
   create,
   update,
@@ -122,4 +132,5 @@ module.exports = {
   findByUser,
   findById,
   findOverlapping,
+  updateEncHeb,
 };

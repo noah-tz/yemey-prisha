@@ -1,3 +1,5 @@
+'use strict';
+
 const express = require('express');
 const router = express.Router();
 const requireAuth = require('../middleware/auth');
@@ -12,7 +14,7 @@ router.use(requireAuth);
  */
 router.get('/', (req, res) => {
   try {
-    const history = cycleService.getHistory(req.userId);
+    const history = cycleService.getHistory(req.userId, req.encKey);
     return res.json({ records: history });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });
@@ -27,12 +29,12 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   try {
     const { startDate, startDateHeb, onah, endDate, inputFormat } = req.body;
-    
+
     // Validate required fields
     if (!onah || (onah !== 'day' && onah !== 'night')) {
       return res.status(400).json({ error: "onah must be 'day' or 'night'" });
     }
-    
+
     const format = inputFormat || 'gregorian';
     if (format === 'hebrew' && !startDateHeb) {
       return res.status(400).json({ error: 'startDateHeb is required for Hebrew input format' });
@@ -47,8 +49,8 @@ router.post('/', (req, res) => {
       onah,
       endDate,
       inputFormat: format
-    });
-    
+    }, req.encKey);
+
     return res.status(201).json(record);
   } catch (err) {
     if (err.message === 'Date conflicts with existing cycle record') {
@@ -66,7 +68,7 @@ router.post('/', (req, res) => {
 router.post('/import', (req, res) => {
   try {
     const { records } = req.body;
-    
+
     if (!records || !Array.isArray(records)) {
       return res.status(400).json({ error: 'records must be an array' });
     }
@@ -77,7 +79,7 @@ router.post('/import', (req, res) => {
       return res.status(400).json({ error: 'Maximum 100 records per import' });
     }
 
-    const result = cycleService.importRecords(req.userId, records);
+    const result = cycleService.importRecords(req.userId, records, req.encKey);
     return res.status(200).json(result);
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });
@@ -94,8 +96,8 @@ router.put('/:id', (req, res) => {
     if (isNaN(recordId)) {
       return res.status(400).json({ error: 'Invalid record ID' });
     }
-    
-    const updated = cycleService.updateRecord(req.userId, recordId, req.body);
+
+    const updated = cycleService.updateRecord(req.userId, recordId, req.body, req.encKey);
     return res.json(updated);
   } catch (err) {
     if (err.message === 'Record not found') {
@@ -115,8 +117,8 @@ router.delete('/:id', (req, res) => {
     if (isNaN(recordId)) {
       return res.status(400).json({ error: 'Invalid record ID' });
     }
-    
-    cycleService.deleteRecord(req.userId, recordId);
+
+    cycleService.deleteRecord(req.userId, recordId, req.encKey);
     return res.json({ message: 'Record deleted successfully' });
   } catch (err) {
     if (err.message === 'Record not found') {

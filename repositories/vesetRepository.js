@@ -7,8 +7,8 @@ const db = require('../db');
  */
 function saveAll(userId, vestot) {
   const insert = db.prepare(
-    `INSERT INTO veset_dates (user_id, source_record_id, type, date, date_rd, heb_year, heb_month, heb_day, onah, is_or_zarua)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO veset_dates (user_id, source_record_id, type, date, date_rd, heb_year, heb_month, heb_day, onah, is_or_zarua, enc_heb)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
 
   const transaction = db.transaction((items) => {
@@ -23,7 +23,8 @@ function saveAll(userId, vestot) {
         v.heb_month,
         v.heb_day,
         v.onah,
-        v.is_or_zarua || 0
+        v.is_or_zarua || 0,
+        v.enc_heb || null
       );
     }
   });

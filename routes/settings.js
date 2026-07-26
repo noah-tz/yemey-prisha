@@ -2,9 +2,7 @@ const express = require('express');
 const router = express.Router();
 const requireAuth = require('../middleware/auth');
 const userRepository = require('../repositories/userRepository');
-const cycleRepository = require('../repositories/cycleRepository');
-const vesetRepository = require('../repositories/vesetRepository');
-const vesetCalculationEngine = require('../services/vesetCalculationEngine');
+const cycleService = require('../services/cycleService');
 
 // All routes require authentication
 router.use(requireAuth);
@@ -83,18 +81,11 @@ router.put('/', (req, res) => {
 
     userRepository.updateSettings(req.userId, settingsUpdate);
 
-    // Get updated user for recalculation
-    const user = userRepository.findById(req.userId);
-    const fullSettings = {
-      posek: user.posek,
-      onah_beinonit_31: user.onah_beinonit_31,
-      or_zarua: user.or_zarua,
-      haflagah_shlishit: user.haflagah_shlishit,
-      hachodesh_overflow: user.hachodesh_overflow
-    };
+    // Recalculate all vestot with new settings (encryption-aware)
+    cycleService.recalculateVestot(req.userId, req.encKey);
 
-    // Recalculate all vestot with new settings
-    vesetCalculationEngine.recalculateAll(req.userId, fullSettings, cycleRepository, vesetRepository);
+    // Get updated user for response
+    const user = userRepository.findById(req.userId);
 
     return res.json({
       posek: user.posek,

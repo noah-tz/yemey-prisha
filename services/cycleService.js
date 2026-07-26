@@ -1,19 +1,20 @@
+'use strict';
+
 const cycleRepository = require('../repositories/cycleRepository');
 const vesetRepository = require('../repositories/vesetRepository');
 const userRepository = require('../repositories/userRepository');
 const vesetCalculationEngine = require('./vesetCalculationEngine');
 const HebrewDateUtils = require('./hebrewDateUtils');
+const { encryptCycleRecord, decryptCycleRecord, encryptVesetDate } = require('./encryptionHelpers');
 
 /**
  * Create a new cycle record.
  * @param {number} userId
  * @param {Object} input - { startDate?, startDateHeb?, onah, endDate?, inputFormat }
- *   inputFormat: 'gregorian' or 'hebrew'
- *   startDate: ISO string (when inputFormat='gregorian')
- *   startDateHeb: { year, month, day } (when inputFormat='hebrew')
- * @returns {Object} created record
+ * @param {Buffer|null} encKey - encryption key (null = plaintext mode)
+ * @returns {Object} created record (decrypted)
  */
-function createRecord(userId, input) {
+function createRecord(userId, input, encKey) {
   // 1. Parse and convert dates
   let startDate, startRd, startHeb;
 
@@ -35,8 +36,8 @@ function createRecord(userId, input) {
     throw new Error('Date conflicts with existing cycle record');
   }
 
-  // 3. Create the record
-  const record = cycleRepository.create(userId, {
+  // 3. Build the record data
+  const recordData = {
     start_date: startDate,
     start_rd: startRd,
     start_heb_year: startHeb.year,
@@ -44,21 +45,18 @@ function createRecord(userId, input) {
     start_heb_day: startHeb.day,
     onah: input.onah,
     end_date: input.endDate || null
-  });
-
-  // 4. Trigger veset recalculation
-  const user = userRepository.findById(userId);
-  const settings = {
-    posek: user.posek,
-    onah_beinonit_31: user.onah_beinonit_31,
-    or_zarua: user.or_zarua,
-    haflagah_shlishit: user.haflagah_shlishit,
-    hachodesh_overflow: user.hachodesh_overflow
   };
-  vesetCalculationEngine.recalculateAll(userId, settings, cycleRepository, vesetRepository);
 
-  // 5. Return the record with interval from previous
-  return enrichWithInterval(record, userId);
+  // 4. Encrypt before storing
+  const encryptedData = encryptCycleRecord(recordData, encKey);
+  const record = cycleRepository.create(userId, encryptedData);
+
+  // 5. Trigger veset recalculation (needs decrypted data)
+  recalculateVestot(userId, encKey);
+
+  // 6. Return the record decrypted with interval info
+  const decryptedRecord = decryptCycleRecord(record, encKey);
+  return enrichWithInterval(decryptedRecord, userId, encKey);
 }
 
 /**
@@ -66,12 +64,16 @@ function createRecord(userId, input) {
  * @param {number} userId
  * @param {number} recordId
  * @param {Object} updates - { startDate?, startDateHeb?, onah?, endDate?, inputFormat? }
- * @returns {Object} updated record
+ * @param {Buffer|null} encKey
+ * @returns {Object} updated record (decrypted)
  */
-function updateRecord(userId, recordId, updates) {
+function updateRecord(userId, recordId, updates, encKey) {
   // Verify ownership
   const existing = cycleRepository.findById(userId, recordId);
   if (!existing) throw new Error('Record not found');
+
+  // Decrypt existing to work with plaintext
+  const decryptedExisting = decryptCycleRecord(existing, encKey);
 
   // If date is being changed, recompute derived fields
   const updateData = {};
@@ -99,44 +101,55 @@ function updateRecord(userId, recordId, updates) {
   if (updates.onah) updateData.onah = updates.onah;
   if (Object.prototype.hasOwnProperty.call(updates, 'endDate')) updateData.end_date = updates.endDate;
 
-  const updated = cycleRepository.update(userId, recordId, updateData);
+  // Encrypt the update data
+  const encryptedUpdate = encryptCycleRecord(
+    {
+      start_date: updateData.start_date || decryptedExisting.start_date,
+      start_heb_year: updateData.start_heb_year || decryptedExisting.start_heb_year,
+      start_heb_month: updateData.start_heb_month || decryptedExisting.start_heb_month,
+      start_heb_day: updateData.start_heb_day || decryptedExisting.start_heb_day,
+      onah: updateData.onah || decryptedExisting.onah,
+      start_rd: updateData.start_rd || decryptedExisting.start_rd,
+      end_date: Object.prototype.hasOwnProperty.call(updateData, 'end_date') ? updateData.end_date : decryptedExisting.end_date
+    },
+    encKey
+  );
+
+  // Build final update payload for repository
+  const repoUpdate = {};
+  if (updateData.start_rd) repoUpdate.start_rd = updateData.start_rd;
+  if (Object.prototype.hasOwnProperty.call(updateData, 'end_date')) repoUpdate.end_date = updateData.end_date;
+  repoUpdate.start_date = encryptedUpdate.start_date;
+  repoUpdate.start_heb_year = encryptedUpdate.start_heb_year;
+  repoUpdate.start_heb_month = encryptedUpdate.start_heb_month;
+  repoUpdate.start_heb_day = encryptedUpdate.start_heb_day;
+  repoUpdate.onah = encryptedUpdate.onah;
+  if (encryptedUpdate.enc_heb) repoUpdate.enc_heb = encryptedUpdate.enc_heb;
+
+  const updated = cycleRepository.update(userId, recordId, repoUpdate);
 
   // Trigger recalculation
-  const user = userRepository.findById(userId);
-  const settings = {
-    posek: user.posek,
-    onah_beinonit_31: user.onah_beinonit_31,
-    or_zarua: user.or_zarua,
-    haflagah_shlishit: user.haflagah_shlishit,
-    hachodesh_overflow: user.hachodesh_overflow
-  };
-  vesetCalculationEngine.recalculateAll(userId, settings, cycleRepository, vesetRepository);
+  recalculateVestot(userId, encKey);
 
-  return enrichWithInterval(updated, userId);
+  const decryptedUpdated = decryptCycleRecord(updated, encKey);
+  return enrichWithInterval(decryptedUpdated, userId, encKey);
 }
 
 /**
  * Delete a cycle record.
  * @param {number} userId
  * @param {number} recordId
+ * @param {Buffer|null} encKey
  * @returns {{ deleted: boolean }}
  */
-function deleteRecord(userId, recordId) {
+function deleteRecord(userId, recordId, encKey) {
   const existing = cycleRepository.findById(userId, recordId);
   if (!existing) throw new Error('Record not found');
 
   cycleRepository.delete(userId, recordId);
 
   // Trigger recalculation
-  const user = userRepository.findById(userId);
-  const settings = {
-    posek: user.posek,
-    onah_beinonit_31: user.onah_beinonit_31,
-    or_zarua: user.or_zarua,
-    haflagah_shlishit: user.haflagah_shlishit,
-    hachodesh_overflow: user.hachodesh_overflow
-  };
-  vesetCalculationEngine.recalculateAll(userId, settings, cycleRepository, vesetRepository);
+  recalculateVestot(userId, encKey);
 
   return { deleted: true };
 }
@@ -144,49 +157,35 @@ function deleteRecord(userId, recordId) {
 /**
  * Get full cycle history for a user, sorted chronologically with interval info.
  * @param {number} userId
+ * @param {Buffer|null} encKey
  * @returns {Array<Object>}
  */
-function getHistory(userId) {
+function getHistory(userId, encKey) {
   const records = cycleRepository.findByUser(userId);
-  // Add interval from previous record
-  return records.map((record, index) => {
-    const interval = index > 0 ? record.start_rd - records[index - 1].start_rd : null;
+  // Decrypt all records
+  const decrypted = records.map(r => decryptCycleRecord(r, encKey));
+  // Add interval from previous record (using start_rd which is always plaintext)
+  return decrypted.map((record, index) => {
+    const interval = index > 0 ? records[index].start_rd - records[index - 1].start_rd : null;
     return { ...record, intervalFromPrevious: interval };
   });
 }
 
-// Helper: convert Date to ISO date string (YYYY-MM-DD)
-function toISODate(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-// Helper: add interval info to a single record
-function enrichWithInterval(record, userId) {
-  const all = cycleRepository.findByUser(userId);
-  const idx = all.findIndex(r => r.id === record.id);
-  const interval = idx > 0 ? all[idx].start_rd - all[idx - 1].start_rd : null;
-  return { ...record, intervalFromPrevious: interval };
-}
-
 /**
  * Bulk import multiple cycle records at once.
- * Records are sorted by date, validated, inserted, and vestot recalculated once at the end.
  * @param {number} userId
- * @param {Array<{startDate: string, onah: string, endDate?: string}>} records
- * @returns {{ imported: number, skipped: number, errors: Array<{index: number, date: string, error: string}> }}
+ * @param {Array} records
+ * @param {Buffer|null} encKey
+ * @returns {{ imported: number, skipped: number, errors: Array }}
  */
-function importRecords(userId, records) {
+function importRecords(userId, records, encKey) {
   const results = { imported: 0, skipped: 0, errors: [] };
 
-  // Sort records by date ascending (use startDate if available, otherwise convert hebrew first for sorting)
+  // Sort records by date ascending
   const sorted = [...records].sort((a, b) => {
     const dateA = a.startDate || '';
     const dateB = b.startDate || '';
     if (dateA && dateB) return dateA.localeCompare(dateB);
-    // If one or both use hebrew input, compute RD for comparison
     let rdA, rdB;
     if (a.inputFormat === 'hebrew' && a.startDateHeb) {
       rdA = HebrewDateUtils.heb2rd(a.startDateHeb);
@@ -204,7 +203,6 @@ function importRecords(userId, records) {
   for (let i = 0; i < sorted.length; i++) {
     const rec = sorted[i];
     try {
-      // Validate onah
       if (!rec.onah) {
         results.errors.push({ index: i, date: rec.startDate || '?', error: 'Missing onah' });
         results.skipped++;
@@ -221,9 +219,7 @@ function importRecords(userId, records) {
         continue;
       }
 
-      // Parse date - support both gregorian and hebrew
       let startDate, startRd, startHeb;
-      
       if (rec.inputFormat === 'hebrew' && rec.startDateHeb) {
         startHeb = rec.startDateHeb;
         startRd = HebrewDateUtils.heb2rd(startHeb);
@@ -247,8 +243,8 @@ function importRecords(userId, records) {
         continue;
       }
 
-      // Insert (without triggering recalculation per record)
-      cycleRepository.create(userId, {
+      // Encrypt and insert
+      const recordData = {
         start_date: startDate,
         start_rd: startRd,
         start_heb_year: startHeb.year,
@@ -256,7 +252,9 @@ function importRecords(userId, records) {
         start_heb_day: startHeb.day,
         onah: rec.onah,
         end_date: rec.endDate || null
-      });
+      };
+      const encryptedData = encryptCycleRecord(recordData, encKey);
+      cycleRepository.create(userId, encryptedData);
 
       results.imported++;
     } catch (err) {
@@ -265,20 +263,62 @@ function importRecords(userId, records) {
     }
   }
 
-  // Recalculate ONCE at the end (not per record)
+  // Recalculate ONCE at the end
   if (results.imported > 0) {
-    const user = userRepository.findById(userId);
-    const settings = {
-      posek: user.posek,
-      onah_beinonit_31: user.onah_beinonit_31,
-      or_zarua: user.or_zarua,
-      haflagah_shlishit: user.haflagah_shlishit,
-      hachodesh_overflow: user.hachodesh_overflow
-    };
-    vesetCalculationEngine.recalculateAll(userId, settings, cycleRepository, vesetRepository);
+    recalculateVestot(userId, encKey);
   }
 
   return results;
 }
 
-module.exports = { createRecord, updateRecord, deleteRecord, getHistory, importRecords };
+/**
+ * Recalculate all vestot for a user, handling encryption/decryption.
+ * Reads encrypted cycle records → decrypts → calculates → encrypts results → stores.
+ * @param {number} userId
+ * @param {Buffer|null} encKey
+ */
+function recalculateVestot(userId, encKey) {
+  const user = userRepository.findById(userId);
+  const settings = {
+    posek: user.posek,
+    onah_beinonit_31: user.onah_beinonit_31,
+    or_zarua: user.or_zarua,
+    haflagah_shlishit: user.haflagah_shlishit,
+    hachodesh_overflow: user.hachodesh_overflow
+  };
+
+  // Get all cycle records and decrypt them for calculation
+  const encryptedRecords = cycleRepository.findByUser(userId);
+  const decryptedRecords = encryptedRecords.map(r => decryptCycleRecord(r, encKey));
+
+  // Delete existing vestot
+  vesetRepository.deleteByUser(userId);
+
+  // Calculate vestot using decrypted records
+  // We need to pass decrypted records to the engine, so we use the engine's internal methods
+  const allVestot = vesetCalculationEngine.calculateFromRecords(decryptedRecords, settings, userId);
+
+  // Encrypt vestot before storing
+  if (allVestot.length > 0) {
+    const encryptedVestot = allVestot.map(v => encryptVesetDate(v, encKey));
+    vesetRepository.saveAll(userId, encryptedVestot);
+  }
+}
+
+// Helper: convert Date to ISO date string (YYYY-MM-DD)
+function toISODate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Helper: add interval info to a single record
+function enrichWithInterval(record, userId, encKey) {
+  const all = cycleRepository.findByUser(userId);
+  const idx = all.findIndex(r => r.id === record.id);
+  const interval = idx > 0 ? all[idx].start_rd - all[idx - 1].start_rd : null;
+  return { ...record, intervalFromPrevious: interval };
+}
+
+module.exports = { createRecord, updateRecord, deleteRecord, getHistory, importRecords, recalculateVestot };

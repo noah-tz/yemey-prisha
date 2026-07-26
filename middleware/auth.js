@@ -5,12 +5,18 @@ const userRepository = require('../repositories/userRepository');
 /**
  * Authentication middleware.
  * Checks session first, then falls back to API key authentication.
- * Supports X-API-Key header or Authorization: Bearer <key>.
+ * Attaches encKey (Buffer) to req for field-level encryption/decryption.
  */
 function requireAuth(req, res, next) {
   // 1. Check session first (existing behavior)
   if (req.session && req.session.userId) {
     req.userId = req.session.userId;
+    // Attach encryption key from session (hex → Buffer)
+    if (req.session.encKey) {
+      req.encKey = Buffer.from(req.session.encKey, 'hex');
+    } else {
+      req.encKey = null;
+    }
     return next();
   }
 
@@ -28,6 +34,18 @@ function requireAuth(req, res, next) {
     if (user) {
       req.userId = user.id;
       req.isApiAuth = true;
+
+      // Unwrap encryption key from stored enc_key_encrypted using SESSION_SECRET
+      if (user.enc_key_encrypted) {
+        try {
+          const cryptoService = require('../services/crypto');
+          req.encKey = cryptoService.unwrapKeyFromStorage(user.enc_key_encrypted);
+        } catch (e) {
+          req.encKey = null;
+        }
+      } else {
+        req.encKey = null;
+      }
       return next();
     }
   }

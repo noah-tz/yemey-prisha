@@ -1,13 +1,17 @@
+'use strict';
+
 const bcrypt = require('bcrypt');
 const userRepository = require('../repositories/userRepository');
+const cryptoService = require('./crypto');
 
 const SALT_ROUNDS = 12;
 
 /**
  * Register a new user with email and password.
+ * Generates encryption salt, derives key, stores wrapped key.
  * @param {string} email
  * @param {string} password
- * @returns {{ id: number, email: string, posek: string, created_at: string }}
+ * @returns {{ id: number, email: string, posek: string, created_at: string, encKey: string }}
  * @throws {Error} If email is missing, password is too short, or email already exists
  */
 function register(email, password) {
@@ -21,9 +25,14 @@ function register(email, password) {
 
   const hash = bcrypt.hashSync(password, SALT_ROUNDS);
 
+  // Generate encryption salt and derive key
+  const encSalt = cryptoService.generateSalt();
+  const encKey = cryptoService.deriveKey(password, encSalt);
+  const encKeyEncrypted = cryptoService.wrapKeyForStorage(encKey);
+
   try {
-    const user = userRepository.create(email, hash);
-    return user;
+    const user = userRepository.create(email, hash, encSalt, encKeyEncrypted);
+    return { ...user, encKey: encKey.toString('hex') };
   } catch (err) {
     if (err.message && err.message.includes('UNIQUE constraint failed')) {
       throw new Error('Email already registered');
@@ -34,9 +43,10 @@ function register(email, password) {
 
 /**
  * Authenticate a user with email and password.
+ * Derives encryption key from password + stored salt.
  * @param {string} email
  * @param {string} password
- * @returns {{ id: number, email: string, posek: string, created_at: string }}
+ * @returns {{ id: number, email: string, posek: string, created_at: string, encKey: string }}
  * @throws {Error} If credentials are invalid
  */
 function login(email, password) {
@@ -52,9 +62,29 @@ function login(email, password) {
     throw new Error('Invalid credentials');
   }
 
-  // Return user without password_hash
-  const { password_hash, ...safeUser } = user;
-  return safeUser;
+  // Derive encryption key
+  let encKeyHex = null;
+  if (user.enc_salt) {
+    const encKey = cryptoService.deriveKey(password, user.enc_salt);
+    encKeyHex = encKey.toString('hex');
+
+    // If enc_key_encrypted is missing (legacy user migrating), store it now
+    if (!user.enc_key_encrypted) {
+      const encKeyEncrypted = cryptoService.wrapKeyForStorage(encKey);
+      userRepository.updateEncryption(user.id, user.enc_salt, encKeyEncrypted);
+    }
+  } else {
+    // Legacy user without encryption — generate salt and key now
+    const encSalt = cryptoService.generateSalt();
+    const encKey = cryptoService.deriveKey(password, encSalt);
+    const encKeyEncrypted = cryptoService.wrapKeyForStorage(encKey);
+    userRepository.updateEncryption(user.id, encSalt, encKeyEncrypted);
+    encKeyHex = encKey.toString('hex');
+  }
+
+  // Return user without sensitive fields
+  const { password_hash, enc_salt, enc_key_encrypted, ...safeUser } = user;
+  return { ...safeUser, encKey: encKeyHex };
 }
 
 module.exports = {

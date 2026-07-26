@@ -1,6 +1,10 @@
+'use strict';
+
 const express = require('express');
 const router = express.Router();
 const authService = require('../services/authService');
+const { migrateUserRecords } = require('../services/migratePlaintext');
+const requireAuth = require('../middleware/auth');
 
 /**
  * POST /register
@@ -15,7 +19,9 @@ router.post('/register', async (req, res) => {
 
   try {
     const { email, password } = req.body;
-    await authService.register(email, password);
+    const user = await authService.register(email, password);
+    req.session.userId = user.id;
+    req.session.encKey = user.encKey; // hex string of encryption key
     return res.status(201).json({ message: 'Account created successfully' });
   } catch (err) {
     if (err.message === 'Email already registered') {
@@ -37,6 +43,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     const user = await authService.login(email, password);
     req.session.userId = user.id;
+    req.session.encKey = user.encKey; // hex string of encryption key
     return res.status(200).json({ message: 'Login successful' });
   } catch (err) {
     if (err.message === 'Invalid credentials') {
@@ -48,7 +55,7 @@ router.post('/login', async (req, res) => {
 
 /**
  * POST /logout
- * Destroy session.
+ * Destroy session (clears encKey from memory).
  */
 router.post('/logout', (req, res) => {
   req.session.destroy((err) => {
@@ -57,6 +64,27 @@ router.post('/logout', (req, res) => {
     }
     return res.status(200).json({ message: 'Logged out successfully' });
   });
+});
+
+/**
+ * POST /migrate-encryption
+ * Encrypt existing plaintext records for the current user.
+ * Requires authentication and an active encryption key.
+ */
+router.post('/migrate-encryption', requireAuth, (req, res) => {
+  try {
+    if (!req.encKey) {
+      return res.status(400).json({ error: 'Encryption key not available. Please log out and log in again.' });
+    }
+    const result = migrateUserRecords(req.userId, req.encKey);
+    return res.json({
+      message: 'Migration complete',
+      cyclesEncrypted: result.cyclesEncrypted,
+      vestotsEncrypted: result.vestotsEncrypted
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 module.exports = router;
