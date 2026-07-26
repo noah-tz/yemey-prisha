@@ -18,8 +18,21 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    const { email, password } = req.body;
+    const { email, password, termsAccepted } = req.body;
+
+    if (!termsAccepted) {
+      return res.status(400).json({ error: 'יש לאשר את תנאי השימוש ומדיניות הפרטיות' });
+    }
+
     const user = await authService.register(email, password);
+
+    // Log consent
+    const db = require('../db');
+    db.prepare(
+      'INSERT INTO consent_log (user_id, terms_version, ip_address, user_agent) VALUES (?, ?, ?, ?)'
+    ).run(user.id, '1.0', req.ip || req.connection.remoteAddress, req.headers['user-agent'] || '');
+    db.prepare('UPDATE users SET terms_accepted = ? WHERE id = ?').run('1.0', user.id);
+
     req.session.userId = user.id;
     req.session.encKey = user.encKey; // hex string of encryption key
     return res.status(201).json({ message: 'Account created successfully' });

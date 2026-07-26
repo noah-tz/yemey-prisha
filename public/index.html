@@ -56,6 +56,14 @@
               <label for="register-confirm">אימות סיסמה</label>
               <input type="password" id="register-confirm" required autocomplete="new-password">
             </div>
+            <div class="form-group" style="margin-top: 1rem;">
+              <label class="toggle-option" style="border: none; padding: 0;">
+                <input type="checkbox" id="register-terms" required>
+                <span style="font-size: 0.85rem;">
+                  קראתי ואני מסכים/ה ל<a href="/terms.html" target="_blank" style="color: var(--color-primary);">תנאי השימוש ומדיניות הפרטיות</a>
+                </span>
+              </label>
+            </div>
             <div id="register-error" class="error-message" role="alert"></div>
             <button type="submit" class="btn btn-primary">הרשמה</button>
           </form>
@@ -477,6 +485,9 @@ curl -H "X-API-Key: vst_your_key" \
           <p style="line-height: 1.8; font-size: 1rem;">
             האתר משתמש בעוגיית סשן טכנית (httpOnly) לצורך שמירת ההתחברות בלבד. 
             האתר אינו משתמש בעוגיות מעקב, פרסום או אנליטיקה של צד שלישי.
+          </p>
+          <p style="margin-top: 1rem;">
+            <a href="/terms.html" target="_blank" style="color: var(--color-primary); font-weight: 600;">תנאי שימוש ומדיניות פרטיות מלאה →</a>
           </p>
         </div>
         <a href="#calendar" class="btn btn-secondary" style="margin-top: 1rem;">חזרה</a>

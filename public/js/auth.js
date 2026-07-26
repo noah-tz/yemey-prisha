@@ -70,7 +70,13 @@ var Auth = (function() {
         return;
       }
 
-      Api.post('/api/auth/register', { email: email, password: password })
+      var termsChecked = document.getElementById('register-terms').checked;
+      if (!termsChecked) {
+        errorEl.textContent = 'יש לאשר את תנאי השימוש';
+        return;
+      }
+
+      Api.post('/api/auth/register', { email: email, password: password, termsAccepted: true })
         .then(function() {
           window.location.hash = '#calendar';
           App.checkAuth();

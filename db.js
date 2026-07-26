@@ -239,6 +239,24 @@ try {
   }
 } catch(e) {}
 
+// Migration: consent_log table for recording terms acceptance
+db.exec(`
+  CREATE TABLE IF NOT EXISTS consent_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    terms_version TEXT NOT NULL,
+    ip_address TEXT,
+    user_agent TEXT,
+    consented_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+`);
+
+// Migration: add terms_accepted column to users
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN terms_accepted TEXT`);
+} catch(e) {}
+
 // Migration: reminder_emails table for multiple verified email recipients
 db.exec(`
   CREATE TABLE IF NOT EXISTS reminder_emails (
