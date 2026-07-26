@@ -271,4 +271,18 @@ db.exec(`
   );
 `);
 
+// Migration: user_data table for encrypted blob storage (replaces per-field encryption)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_data (
+    user_id INTEGER PRIMARY KEY,
+    encrypted_blob TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+`);
+
+// Migration: drop updated_at column from user_data if it exists
+try {
+  db.exec(`ALTER TABLE user_data DROP COLUMN updated_at`);
+} catch(e) {} // column may not exist or already dropped
+
 module.exports = db;

@@ -2,8 +2,7 @@
 
 const db = require('../db');
 const cryptoService = require('./crypto');
-const { decryptVesetDate } = require('./encryptionHelpers');
-const vesetRepository = require('../repositories/vesetRepository');
+const { loadUserData } = require('./userDataService');
 const { sendReminder } = require('./emailService');
 const HebrewDateUtils = require('./hebrewDateUtils');
 
@@ -44,9 +43,9 @@ async function runReminders() {
       // Decrypt the user's encryption key
       const encKey = cryptoService.unwrapKeyFromStorage(user.enc_key_encrypted);
 
-      // Get ALL vestot for user and decrypt
-      const allVestot = vesetRepository.findByUser(user.id);
-      const decrypted = allVestot.map(v => decryptVesetDate(v, encKey));
+      // Get vestot from blob storage
+      const data = loadUserData(user.id, encKey);
+      const decrypted = data.vestot || [];
 
       // Filter: tonight (today's date, onah=night) + tomorrow day (tomorrow's date, onah=day)
       const relevant = decrypted.filter(v => {

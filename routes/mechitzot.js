@@ -3,18 +3,17 @@
 const express = require('express');
 const router = express.Router();
 const requireAuth = require('../middleware/auth');
-const mechitzaRepository = require('../repositories/mechitzaRepository');
-const { recalculateVestot } = require('../services/cycleService');
+const cycleService = require('../services/cycleService');
 
 router.use(requireAuth);
 
 /**
  * GET /api/mechitzot
- * List all mechitzot for the authenticated user (decrypted).
+ * List all mechitzot for the authenticated user.
  */
 router.get('/', (req, res) => {
   try {
-    const mechitzot = mechitzaRepository.findByUserDecrypted(req.userId, req.encKey);
+    const mechitzot = cycleService.getMechitzot(req.userId, req.encKey);
     return res.json({ mechitzot });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });
@@ -32,9 +31,8 @@ router.post('/', (req, res) => {
     if (!afterRecordId) {
       return res.status(400).json({ error: 'afterRecordId is required' });
     }
-    mechitzaRepository.create(req.userId, afterRecordId, description, req.encKey);
-    recalculateVestot(req.userId, req.encKey);
-    return res.status(201).json({ message: 'Mechitza created' });
+    const mechitza = cycleService.addMechitza(req.userId, afterRecordId, description, req.encKey);
+    return res.status(201).json({ message: 'Mechitza created', mechitza });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });
   }
@@ -47,8 +45,7 @@ router.post('/', (req, res) => {
 router.delete('/:id', (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    mechitzaRepository.deleteById(req.userId, id);
-    recalculateVestot(req.userId, req.encKey);
+    cycleService.removeMechitza(req.userId, id, req.encKey);
     return res.json({ message: 'Mechitza removed' });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });

@@ -315,13 +315,38 @@ var History = (function() {
   function startEdit(cycle) {
     editingId = cycle.id;
     document.getElementById('cycle-edit-id').value = cycle.id;
-    document.getElementById('cycle-heb-day').value = cycle.start_heb_day || '';
-    document.getElementById('cycle-heb-month').value = cycle.start_heb_month || '';
-    document.getElementById('cycle-heb-year').value = cycle.start_heb_year || '';
+
+    // Ensure the year exists in the dropdown before setting it
+    var yearSelect = document.getElementById('cycle-heb-year');
+    var yearValue = String(cycle.start_heb_year);
+    var yearExists = false;
+    for (var i = 0; i < yearSelect.options.length; i++) {
+      if (yearSelect.options[i].value === yearValue) {
+        yearExists = true;
+        break;
+      }
+    }
+    if (!yearExists && cycle.start_heb_year) {
+      var opt = document.createElement('option');
+      opt.value = cycle.start_heb_year;
+      opt.textContent = HebrewDate.formatYear(cycle.start_heb_year);
+      yearSelect.insertBefore(opt, yearSelect.options[1]); // After "שנה" placeholder
+    }
+
+    yearSelect.value = yearValue;
+    document.getElementById('cycle-heb-month').value = String(cycle.start_heb_month) || '';
+
+    // Update days dropdown for this month/year combination, then set day
+    updateMainFormDays();
+    document.getElementById('cycle-heb-day').value = String(cycle.start_heb_day) || '';
+
     document.getElementById('cycle-onah').value = cycle.onah || 'day';
     document.getElementById('cycle-form-title').textContent = 'עריכת וסת';
     document.getElementById('cycle-submit-btn').textContent = 'עדכן';
     document.getElementById('cycle-cancel-btn').style.display = 'inline-block';
+
+    // Scroll to form
+    document.getElementById('cycle-form-container').scrollIntoView({ behavior: 'smooth' });
   }
 
   function resetForm() {
