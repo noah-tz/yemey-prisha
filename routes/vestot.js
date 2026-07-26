@@ -46,6 +46,7 @@ function formatVestot(vestot) {
     date: v.date,
     hebrewDate: { year: v.heb_year, month: v.heb_month, day: v.heb_day },
     onah: v.onah,
+    isOrZarua: !!v.is_or_zarua,
     sourceRecordId: v.source_record_id
   }));
 }

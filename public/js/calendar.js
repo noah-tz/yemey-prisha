@@ -1,12 +1,14 @@
 /**
- * Calendar module
- * Displays a monthly calendar with veset markers.
+ * Calendar module — displays monthly calendar with veset markers.
  */
 var Calendar = (function() {
   'use strict';
 
   var currentYear;
   var currentMonth;
+  var currentHebMonth; // Hebrew month number (1-13)
+  var currentHebYear;  // Hebrew year (5786)
+  var calendarMode = 'hebrew'; // default to hebrew
 
   var GREG_MONTHS = [
     'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
@@ -14,9 +16,22 @@ var Calendar = (function() {
   ];
 
   var VESET_LABELS = {
-    onah_beinonit: 'בינונית',
-    haflagah: 'הפלגה',
-    hachodesh: 'החודש'
+    onah_beinonit: 'עונה בינונית',
+    onah_beinonit_31: 'עונה בינונית',
+    haflagah: 'הפלגה 1',
+    haflagah_2: 'הפלגה 2',
+    haflagah_3: 'הפלגה 3',
+    hachodesh: 'וסת החודש'
+  };
+
+  // Sort priority (lower = first) — groups same types together
+  var TYPE_ORDER = {
+    onah_beinonit: 1,
+    onah_beinonit_31: 2,
+    haflagah: 3,
+    haflagah_2: 4,
+    haflagah_3: 5,
+    hachodesh: 6
   };
 
   function init() {
@@ -24,49 +39,230 @@ var Calendar = (function() {
     currentYear = now.getFullYear();
     currentMonth = now.getMonth();
 
+    // Compute current Hebrew month
+    var nowHeb = getHebrewDate(now.getFullYear(), now.getMonth(), now.getDate());
+    currentHebMonth = nowHeb.month;
+    currentHebYear = nowHeb.year;
+
     document.getElementById('cal-prev').addEventListener('click', function() {
-      currentMonth++;
-      if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
+      if (calendarMode === 'hebrew') {
+        prevHebMonth();
+      } else {
+        currentMonth--;
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
       }
       render();
     });
 
     document.getElementById('cal-next').addEventListener('click', function() {
-      currentMonth--;
-      if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
+      if (calendarMode === 'hebrew') {
+        nextHebMonth();
+      } else {
+        currentMonth++;
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
       }
+      render();
+    });
+
+    document.getElementById('cal-mode-toggle').addEventListener('click', function() {
+      calendarMode = calendarMode === 'hebrew' ? 'gregorian' : 'hebrew';
+      this.textContent = calendarMode === 'hebrew' ? 'מציג: עברי' : 'מציג: לועזי';
       render();
     });
   }
 
+  function nextHebMonth() {
+    // Hebrew month order: 7,8,9,10,11,12,[13],1,2,3,4,5,6
+    if (currentHebMonth === 6) { // Elul -> Tishrei (next year)
+      currentHebYear++;
+      currentHebMonth = 7;
+    } else if (currentHebMonth === 13) { // Adar II -> Nisan
+      currentHebMonth = 1;
+    } else if (currentHebMonth === 12 && !HebrewDate.isLeapYear(currentHebYear)) {
+      // Adar (non-leap) -> Nisan
+      currentHebMonth = 1;
+    } else {
+      currentHebMonth++;
+    }
+  }
+
+  function prevHebMonth() {
+    if (currentHebMonth === 7) { // Tishrei -> Elul (prev year)
+      currentHebYear--;
+      currentHebMonth = 6;
+    } else if (currentHebMonth === 1) { // Nisan -> Adar or Adar II
+      if (HebrewDate.isLeapYear(currentHebYear)) {
+        currentHebMonth = 13;
+      } else {
+        currentHebMonth = 12;
+      }
+    } else {
+      currentHebMonth--;
+    }
+  }
+
   function render() {
     updateTitle();
-    var from = formatDate(currentYear, currentMonth, 1);
-    var daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    var to = formatDate(currentYear, currentMonth, daysInMonth);
+    var from, to;
+
+    if (calendarMode === 'hebrew') {
+      // Get Gregorian date of 1st day of this Hebrew month
+      var firstDayGreg = hebToGreg(currentHebYear, currentHebMonth, 1);
+      var numDays = HebrewDate.daysInMonth(currentHebMonth, currentHebYear);
+      var lastDayGreg = hebToGreg(currentHebYear, currentHebMonth, numDays);
+      from = fmtDateObj(firstDayGreg);
+      to = fmtDateObj(lastDayGreg);
+    } else {
+      var daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      from = fmtDate(currentYear, currentMonth, 1);
+      to = fmtDate(currentYear, currentMonth, daysInMonth);
+    }
 
     Api.get('/api/vestot/calendar?from=' + from + '&to=' + to)
       .then(function(data) {
-        renderGrid(data);
+        if (calendarMode === 'hebrew') {
+          renderHebrewGrid((data && data.vestot) ? data.vestot : []);
+        } else {
+          renderGrid((data && data.vestot) ? data.vestot : []);
+        }
       })
       .catch(function() {
-        renderGrid([]);
+        if (calendarMode === 'hebrew') {
+          renderHebrewGrid([]);
+        } else {
+          renderGrid([]);
+        }
       });
   }
 
   function updateTitle() {
-    var title = GREG_MONTHS[currentMonth] + ' ' + currentYear;
-    document.getElementById('cal-month-title').textContent = title;
+    if (calendarMode === 'hebrew') {
+      var monthName = HebrewDate.getMonthName(currentHebMonth);
+      var yearName = HebrewDate.formatYear(currentHebYear);
+      document.getElementById('cal-month-title').textContent = monthName + ' ' + yearName;
+    } else {
+      document.getElementById('cal-month-title').textContent = GREG_MONTHS[currentMonth] + ' ' + currentYear;
+    }
   }
 
-  function formatDate(y, m, d) {
-    var mm = String(m + 1).padStart(2, '0');
-    var dd = String(d).padStart(2, '0');
-    return y + '-' + mm + '-' + dd;
+  function getHebrewDate(year, month, day) {
+    // month is 0-based in JS Date, greg2heb expects 1-based
+    return HebrewDate.greg2heb(year, month + 1, day);
+  }
+
+  function hebToGreg(hebYear, hebMonth, hebDay) {
+    return HebrewDate.heb2greg(hebYear, hebMonth, hebDay);
+  }
+
+  function fmtDate(y, m, d) {
+    return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  }
+
+  function fmtDateObj(date) {
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+  }
+
+  function getMarkerClass(type) {
+    if (type.indexOf('beinonit') !== -1) return 'marker-beinonit';
+    if (type === 'haflagah') return 'marker-haflagah1';
+    if (type === 'haflagah_2') return 'marker-haflagah2';
+    if (type === 'haflagah_3') return 'marker-haflagah3';
+    if (type.indexOf('hachodesh') !== -1) return 'marker-hachodesh';
+    return 'marker-beinonit';
+  }
+
+  function getLabel(v) {
+    var type = v.type || '';
+    var base = VESET_LABELS[type] || type;
+    var isAZ = v.is_or_zarua || v.isOrZarua;
+    return isAZ ? ('א״ז ' + base) : base;
+  }
+
+  function sortVestot(list) {
+    return list.slice().sort(function(a, b) {
+      var oA = TYPE_ORDER[a.type] || 99;
+      var oB = TYPE_ORDER[b.type] || 99;
+      if (oA !== oB) return oA - oB;
+      // Same type: or-zarua FIRST (above), then main entry
+      var azA = (a.is_or_zarua || a.isOrZarua) ? 0 : 1;
+      var azB = (b.is_or_zarua || b.isOrZarua) ? 0 : 1;
+      if (azA !== azB) return azA - azB;
+      // Same type and az status: night before day
+      var nightA = a.onah === 'night' ? 0 : 1;
+      var nightB = b.onah === 'night' ? 0 : 1;
+      return nightA - nightB;
+    });
+  }
+
+  function renderHebrewGrid(vestotData) {
+    var container = document.getElementById('cal-days');
+    container.innerHTML = '';
+
+    var numDays = HebrewDate.daysInMonth(currentHebMonth, currentHebYear);
+    var firstDayGreg = hebToGreg(currentHebYear, currentHebMonth, 1);
+    var firstDayOfWeek = firstDayGreg.getDay(); // 0=Sun
+
+    var today = new Date();
+    var todayStr = fmtDateObj(today);
+
+    // Build vestot map
+    var map = {};
+    vestotData.forEach(function(v) {
+      if (!map[v.date]) map[v.date] = [];
+      map[v.date].push(v);
+    });
+
+    // Empty cells before first day of Hebrew month
+    for (var i = 0; i < firstDayOfWeek; i++) {
+      var empty = document.createElement('div');
+      empty.className = 'cal-cell empty';
+      container.appendChild(empty);
+    }
+
+    // Day cells for each day of the Hebrew month
+    for (var d = 1; d <= numDays; d++) {
+      var gregDate = hebToGreg(currentHebYear, currentHebMonth, d);
+      var dateStr = fmtDateObj(gregDate);
+      var cell = document.createElement('div');
+      cell.className = 'cal-cell';
+      if (dateStr === todayStr) cell.className += ' today';
+
+      // Primary: Hebrew day (large)
+      var hebEl = document.createElement('span');
+      hebEl.className = 'cal-date-greg'; // large class
+      hebEl.textContent = HebrewDate.toGematria(d);
+      cell.appendChild(hebEl);
+
+      // Secondary: Gregorian date (small)
+      var gregEl = document.createElement('span');
+      gregEl.className = 'cal-date-heb'; // small class
+      gregEl.textContent = gregDate.getDate() + '/' + (gregDate.getMonth() + 1);
+      cell.appendChild(gregEl);
+
+      // Veset markers
+      if (map[dateStr]) {
+        var sorted = sortVestot(map[dateStr]);
+        var markers = document.createElement('div');
+        markers.className = 'cal-markers';
+
+        sorted.forEach(function(v) {
+          var marker = document.createElement('span');
+          var type = v.type || '';
+          var isAZ = v.is_or_zarua || v.isOrZarua;
+          var cls = 'cal-marker ' + getMarkerClass(type);
+          if (isAZ) cls += ' marker-az';
+          marker.className = cls;
+
+          var icon = v.onah === 'night' ? '🌙' : '☀️';
+          marker.textContent = icon + ' ' + getLabel(v);
+          markers.appendChild(marker);
+        });
+
+        cell.appendChild(markers);
+      }
+
+      container.appendChild(cell);
+    }
   }
 
   function renderGrid(vestotData) {
@@ -76,19 +272,16 @@ var Calendar = (function() {
     var firstDay = new Date(currentYear, currentMonth, 1).getDay();
     var daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     var today = new Date();
-    var todayStr = formatDate(today.getFullYear(), today.getMonth(), today.getDate());
+    var todayStr = fmtDate(today.getFullYear(), today.getMonth(), today.getDate());
 
-    // Build lookup map: date -> array of vestot
-    var vestotMap = {};
-    if (Array.isArray(vestotData)) {
-      vestotData.forEach(function(v) {
-        var dateKey = v.date;
-        if (!vestotMap[dateKey]) vestotMap[dateKey] = [];
-        vestotMap[dateKey].push(v);
-      });
-    }
+    // Map: date -> vestot array
+    var map = {};
+    vestotData.forEach(function(v) {
+      if (!map[v.date]) map[v.date] = [];
+      map[v.date].push(v);
+    });
 
-    // Empty cells before first day
+    // Empty cells
     for (var i = 0; i < firstDay; i++) {
       var empty = document.createElement('div');
       empty.className = 'cal-cell empty';
@@ -97,44 +290,44 @@ var Calendar = (function() {
 
     // Day cells
     for (var d = 1; d <= daysInMonth; d++) {
-      var dateStr = formatDate(currentYear, currentMonth, d);
+      var dateStr = fmtDate(currentYear, currentMonth, d);
       var cell = document.createElement('div');
       cell.className = 'cal-cell';
       if (dateStr === todayStr) cell.className += ' today';
 
-      // Gregorian date
+      // Compute Hebrew date for this day
+      var hebDate = getHebrewDate(currentYear, currentMonth, d);
+
+      // Date numbers — Gregorian is primary (large), Hebrew is secondary (small)
       var gregEl = document.createElement('span');
-      gregEl.className = 'cal-date-greg';
+      gregEl.className = 'cal-date-greg'; // large
       gregEl.textContent = d;
       cell.appendChild(gregEl);
 
-      // Hebrew date (from vestot data if available, or just show day number)
       var hebEl = document.createElement('span');
-      hebEl.className = 'cal-date-heb';
-      if (vestotMap[dateStr] && vestotMap[dateStr][0] && vestotMap[dateStr][0].hebrew_date) {
-        hebEl.textContent = HebrewDate.formatShort(vestotMap[dateStr][0].hebrew_date);
-      }
+      hebEl.className = 'cal-date-heb'; // small
+      hebEl.textContent = HebrewDate.formatShort(hebDate);
       cell.appendChild(hebEl);
 
       // Veset markers
-      if (vestotMap[dateStr]) {
+      if (map[dateStr]) {
+        var sorted = sortVestot(map[dateStr]);
         var markers = document.createElement('div');
         markers.className = 'cal-markers';
-        vestotMap[dateStr].forEach(function(v) {
-          var marker = document.createElement('span');
-          var vesetType = v.veset_type || v.type || '';
-          var markerClass = 'cal-marker';
-          if (vesetType.indexOf('beinonit') !== -1) markerClass += ' marker-beinonit';
-          else if (vesetType.indexOf('haflagah') !== -1) markerClass += ' marker-haflagah';
-          else if (vesetType.indexOf('hachodesh') !== -1) markerClass += ' marker-hachodesh';
-          else markerClass += ' marker-beinonit';
 
-          var onahIcon = v.onah === 'night' ? '🌙' : '☀️';
-          var label = VESET_LABELS[vesetType] || vesetType;
-          marker.className = markerClass;
-          marker.textContent = onahIcon + ' ' + label;
+        sorted.forEach(function(v) {
+          var marker = document.createElement('span');
+          var type = v.type || '';
+          var isAZ = v.is_or_zarua || v.isOrZarua;
+          var cls = 'cal-marker ' + getMarkerClass(type);
+          if (isAZ) cls += ' marker-az';
+          marker.className = cls;
+
+          var icon = v.onah === 'night' ? '🌙' : '☀️';
+          marker.textContent = icon + ' ' + getLabel(v);
           markers.appendChild(marker);
         });
+
         cell.appendChild(markers);
       }
 
@@ -142,8 +335,5 @@ var Calendar = (function() {
     }
   }
 
-  return {
-    init: init,
-    render: render
-  };
+  return { init: init, render: render };
 })();

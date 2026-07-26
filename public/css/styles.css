@@ -348,16 +348,17 @@ body {
   white-space: nowrap;
 }
 
-.cal-marker.marker-beinonit {
-  background: var(--color-beinonit);
-}
+/* === Calendar Marker Colors === */
+.cal-marker.marker-beinonit { background: #E91E63; }
+.cal-marker.marker-haflagah1 { background: #FF9800; }
+.cal-marker.marker-haflagah2 { background: #F57C00; }
+.cal-marker.marker-haflagah3 { background: #E65100; }
+.cal-marker.marker-hachodesh { background: #7B1FA2; }
 
-.cal-marker.marker-haflagah {
-  background: var(--color-haflagah);
-}
-
-.cal-marker.marker-hachodesh {
-  background: var(--color-hachodesh);
+/* Or Zarua — slightly transparent with dashed border */
+.cal-marker.marker-az {
+  opacity: 0.75;
+  border-right: 2px dashed rgba(255,255,255,0.7);
 }
 
 .calendar-legend {
@@ -383,9 +384,15 @@ body {
   display: inline-block;
 }
 
-.dot-beinonit { background: var(--color-beinonit); }
-.dot-haflagah { background: var(--color-haflagah); }
-.dot-hachodesh { background: var(--color-hachodesh); }
+/* Legend dots */
+.dot-beinonit { background: #E91E63; }
+.dot-haflagah1 { background: #FF9800; }
+.dot-haflagah2 { background: #F57C00; }
+.dot-haflagah3 { background: #E65100; }
+.dot-hachodesh { background: #7B1FA2; }
+.dot-az {
+  background: linear-gradient(135deg, #E91E63 33%, #FF9800 33%, #FF9800 66%, #7B1FA2 66%);
+}
 
 /* === History Table === */
 .history-container {

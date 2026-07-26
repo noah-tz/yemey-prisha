@@ -73,14 +73,14 @@ class VesetCalculationEngine {
     const vestot = [];
     const posek = settings.posek;
 
-    // === Onah Beinonit (day 30 = onset + 29) ===
-    const beinonit = this._calcOnahBeinonit(record);
-    vestot.push(beinonit);
+    // === Onah Beinonit (day 30 = onset + 29) — always both onahs ===
+    const beinonitEntries = this._calcOnahBeinonit(record);
+    vestot.push(...beinonitEntries);
 
-    // === Onah Beinonit 31 (day 31 = onset + 30) ===
+    // === Onah Beinonit 31 (day 31 = onset + 30) — always both onahs ===
     if (settings.onah_beinonit_31) {
-      const beinonit31 = this._calcOnahBeinonit31(record);
-      vestot.push(beinonit31);
+      const beinonit31Entries = this._calcOnahBeinonit31(record);
+      vestot.push(...beinonit31Entries);
     }
 
     // === Veset Haflagah (1st) ===
@@ -105,10 +105,13 @@ class VesetCalculationEngine {
     const hachodesh = this._calcHachodesh(record, allRecords, index, posek, settings.hachodesh_overflow);
     if (hachodesh) vestot.push(hachodesh);
 
-    // === Or Zarua: add opposite onah for each entry ===
+    // === Or Zarua: add opposite onah for haflagah and hachodesh ONLY ===
+    // Onah Beinonit already has both onahs natively (not or_zarua related)
     if (settings.or_zarua) {
       const orZaruaEntries = [];
       for (const v of vestot) {
+        // Skip beinonit types — they already have both onahs naturally
+        if (v.type === 'onah_beinonit' || v.type === 'onah_beinonit_31') continue;
         const oz = this._makeOrZarua(v);
         if (oz) orZaruaEntries.push(oz);
       }
@@ -121,14 +124,14 @@ class VesetCalculationEngine {
   // ========== Onah Beinonit ==========
 
   /**
-   * Onset + 29 days (day 30), same onah.
+   * Onset + 29 days (day 30), both onahs (night + day).
+   * Returns an array of two entries.
    */
   _calcOnahBeinonit(record) {
     const targetRd = record.start_rd + 29;
     const targetHeb = HebrewDateUtils.rd2heb(targetRd);
     const targetGreg = HebrewDateUtils.rd2greg(targetRd);
-
-    return {
+    const base = {
       user_id: record.user_id,
       source_record_id: record.id,
       type: 'onah_beinonit',
@@ -137,20 +140,24 @@ class VesetCalculationEngine {
       heb_year: targetHeb.year,
       heb_month: targetHeb.month,
       heb_day: targetHeb.day,
-      onah: record.onah,
       is_or_zarua: 0
     };
+    // Beinonit always has BOTH onahs (night first, then day)
+    return [
+      { ...base, onah: 'night' },
+      { ...base, onah: 'day' }
+    ];
   }
 
   /**
-   * Onset + 30 days (day 31), same onah.
+   * Onset + 30 days (day 31), both onahs (night + day).
+   * Returns an array of two entries.
    */
   _calcOnahBeinonit31(record) {
     const targetRd = record.start_rd + 30;
     const targetHeb = HebrewDateUtils.rd2heb(targetRd);
     const targetGreg = HebrewDateUtils.rd2greg(targetRd);
-
-    return {
+    const base = {
       user_id: record.user_id,
       source_record_id: record.id,
       type: 'onah_beinonit_31',
@@ -159,9 +166,12 @@ class VesetCalculationEngine {
       heb_year: targetHeb.year,
       heb_month: targetHeb.month,
       heb_day: targetHeb.day,
-      onah: record.onah,
       is_or_zarua: 0
     };
+    return [
+      { ...base, onah: 'night' },
+      { ...base, onah: 'day' }
+    ];
   }
 
   // ========== Haflagah ==========

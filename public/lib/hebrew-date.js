@@ -169,6 +169,86 @@ var HebrewDate = (function() {
     }
   }
 
+  // ========== Gregorian to Hebrew conversion ==========
+
+  function greg2abs(year, month, day) {
+    var py = year - 1;
+    return (365 * py + Math.floor(py / 4) - Math.floor(py / 100) +
+      Math.floor(py / 400) + Math.floor((367 * month - 362) / 12) +
+      (month <= 2 ? 0 : (!(year % 4) && (!!(year % 100) || !(year % 400))) ? -1 : -2) + day);
+  }
+
+  function hebrew2abs(y, m, d) {
+    var NISAN = 1, TISHREI = 7;
+    var EPOCH = -1373428;
+    var tempabs = d;
+    var miy = isLeapYear(y) ? 13 : 12;
+    if (m < TISHREI) {
+      for (var mi = TISHREI; mi <= miy; mi++) tempabs += daysInMonth(mi, y);
+      for (var mi2 = NISAN; mi2 < m; mi2++) tempabs += daysInMonth(mi2, y);
+    } else {
+      for (var mi3 = TISHREI; mi3 < m; mi3++) tempabs += daysInMonth(mi3, y);
+    }
+    return EPOCH + elapsedDays(y) + tempabs - 1;
+  }
+
+  function abs2hebrew(abs) {
+    var EPOCH = -1373428;
+    abs = Math.trunc(abs);
+    var year = Math.floor((abs - EPOCH) / 365.24682220597794);
+    while (EPOCH + elapsedDays(year) <= abs) year++;
+    year--;
+
+    var month = abs < hebrew2abs(year, 1, 1) ? 7 : 1;
+    var miy = isLeapYear(year) ? 13 : 12;
+    while (month <= miy && abs > hebrew2abs(year, month, daysInMonth(month, year))) {
+      month++;
+    }
+    var day = 1 + abs - hebrew2abs(year, month, 1);
+    return { year: year, month: month, day: day };
+  }
+
+  /**
+   * Convert Gregorian date to Hebrew date.
+   * @param {number} year
+   * @param {number} month (1-12)
+   * @param {number} day
+   * @returns {{ year: number, month: number, day: number }}
+   */
+  function greg2heb(year, month, day) {
+    var abs = greg2abs(year, month, day);
+    return abs2hebrew(abs);
+  }
+
+  /**
+   * Convert Hebrew date to Gregorian Date object.
+   * @param {number} year - Hebrew year
+   * @param {number} month - Hebrew month (1-13)
+   * @param {number} day - Hebrew day
+   * @returns {Date} Gregorian Date object
+   */
+  function heb2greg(year, month, day) {
+    var abs = hebrew2abs(year, month, day);
+    // abs2greg conversion
+    var l0 = abs - 1;
+    var n400 = Math.floor(l0 / 146097);
+    var d1 = l0 % 146097;
+    var n100 = Math.floor(d1 / 36524);
+    var d2 = d1 % 36524;
+    var n4 = Math.floor(d2 / 1461);
+    var d3 = d2 % 1461;
+    var n1 = Math.floor(d3 / 365);
+    var gy = 400 * n400 + 100 * n100 + 4 * n4 + n1;
+    if (n100 !== 4 && n1 !== 4) gy++;
+    var gm1 = greg2abs(gy, 1, 1);
+    var priorDays = abs - gm1;
+    var isLeap = !(gy % 4) && (!!(gy % 100) || !(gy % 400));
+    var correction = abs < greg2abs(gy, 3, 1) ? 0 : isLeap ? 1 : 2;
+    var gm = Math.floor((12 * (priorDays + correction) + 373) / 367);
+    var gd = abs - greg2abs(gy, gm, 1) + 1;
+    return new Date(gy, gm - 1, gd);
+  }
+
   return {
     format: format,
     formatShort: formatShort,
@@ -177,6 +257,8 @@ var HebrewDate = (function() {
     formatYear: formatYear,
     daysInMonth: daysInMonth,
     isLeapYear: isLeapYear,
+    greg2heb: greg2heb,
+    heb2greg: heb2greg,
     HEBREW_MONTHS: HEBREW_MONTHS
   };
 })();
