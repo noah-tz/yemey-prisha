@@ -66,6 +66,21 @@ var History = (function() {
       handleImport();
     });
 
+    // Export button
+    document.getElementById('export-btn').addEventListener('click', function() {
+      Api.get('/api/cycles/export')
+        .then(function(data) {
+          var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'luach-vestot-backup.json';
+          a.click();
+          URL.revokeObjectURL(url);
+        })
+        .catch(function(err) { alert(err.message || 'שגיאה בייצוא'); });
+    });
+
     // Add initial import row
     addImportRow();
   }

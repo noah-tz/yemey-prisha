@@ -285,4 +285,12 @@ try {
   db.exec(`ALTER TABLE user_data DROP COLUMN updated_at`);
 } catch(e) {} // column may not exist or already dropped
 
+// Migration: add reset_token columns to users table
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN reset_token TEXT`);
+} catch(e) {}
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN reset_token_expires TEXT`);
+} catch(e) {}
+
 module.exports = db;

@@ -9,6 +9,31 @@ const cycleService = require('../services/cycleService');
 router.use(requireAuth);
 
 /**
+ * GET /api/cycles/export
+ * Export all user data as JSON (for backup).
+ */
+router.get('/export', (req, res) => {
+  try {
+    const history = cycleService.getHistory(req.userId, req.encKey);
+    const vestot = cycleService.getVestot(req.userId, req.encKey);
+    const mechitzot = cycleService.getMechitzot(req.userId, req.encKey);
+    
+    const exportData = {
+      exported_at: new Date().toISOString(),
+      cycles: history,
+      vestot: vestot,
+      mechitzot: mechitzot
+    };
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename="luach-vestot-backup.json"');
+    return res.json(exportData);
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * GET /api/cycles
  * List all cycle records for the authenticated user.
  */

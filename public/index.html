@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>לוח וסתות</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1976D2">
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
@@ -37,6 +39,7 @@
             </div>
             <div id="login-error" class="error-message" role="alert"></div>
             <button type="submit" class="btn btn-primary">כניסה</button>
+            <p style="text-align:center; margin-top:0.75rem;"><a href="#" id="forgot-password-link" style="color:var(--color-text-secondary); font-size:0.85rem;">שכחתי סיסמה</a></p>
           </form>
           <p class="auth-switch">אין לך חשבון? <a href="#" id="show-register">הרשמה</a></p>
         </div>
@@ -191,6 +194,9 @@
             <tbody id="history-tbody"></tbody>
           </table>
           <p id="history-empty" class="empty-state" style="display:none;">אין וסתות רשומות עדיין.</p>
+        </div>
+        <div style="margin-top: 1.5rem; text-align: center;">
+          <button class="btn btn-secondary" id="export-btn">📥 ייצוא נתונים (JSON)</button>
         </div>
       </div>
     </section>
@@ -519,5 +525,10 @@ curl -H "X-API-Key: vst_your_key" \
   <script src="/js/history.js"></script>
   <script src="/js/settings.js"></script>
   <script src="/js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(function(){});
+    }
+  </script>
 </body>
 </html>

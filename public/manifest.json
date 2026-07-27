@@ -1,0 +1,14 @@
+{
+  "name": "לוח וסתות",
+  "short_name": "וסתות",
+  "description": "מעקב מחזורים וחישוב ימי פרישה",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F7FA",
+  "theme_color": "#1976D2",
+  "dir": "rtl",
+  "lang": "he",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

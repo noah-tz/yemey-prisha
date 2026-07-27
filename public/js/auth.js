@@ -46,6 +46,15 @@ var Auth = (function() {
         });
     });
 
+    document.getElementById('forgot-password-link').addEventListener('click', function(e) {
+      e.preventDefault();
+      var email = document.getElementById('login-email').value.trim();
+      if (!email) { document.getElementById('login-error').textContent = 'נא להזין כתובת מייל'; return; }
+      fetch('/api/auth/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:email}) })
+        .then(function(r) { return r.json(); })
+        .then(function(d) { document.getElementById('login-error').textContent = ''; document.getElementById('login-error').style.color='#388E3C'; document.getElementById('login-error').textContent = d.message || 'נשלח קישור לאיפוס'; });
+    });
+
     registerForm.addEventListener('submit', function(e) {
       e.preventDefault();
       var errorEl = document.getElementById('register-error');
