@@ -170,15 +170,15 @@ router.delete('/:id', (req, res) => {
 /**
  * POST /api/cycles/:id/nekiim
  * Start counting 7 nekiim for a cycle.
- * Body: { startDate: "YYYY-MM-DD" } (hefsek taharah date)
+ * Body: { startDate: "YYYY-MM-DD" } OR { hefsekHeb: { year, month, day } }
  * The 7 nekiim start the day AFTER the hefsek.
  * Tevilah night = hefsek + 8 days.
+ * Only one active (non-completed) nekiim count is allowed at a time.
  */
 router.post('/:id/nekiim', (req, res) => {
   try {
     const cycleId = parseInt(req.params.id, 10);
-    const { startDate } = req.body;
-    if (!startDate) return res.status(400).json({ error: 'startDate is required' });
+    const { startDate, hefsekHeb } = req.body;
 
     const HebrewDateUtils = require('../services/hebrewDateUtils');
     const { loadUserData, saveUserData } = require('../services/userDataService');
@@ -186,24 +186,49 @@ router.post('/:id/nekiim', (req, res) => {
 
     if (!data.nekiim) data.nekiim = [];
 
-    const hefsekRd = HebrewDateUtils.greg2rd(new Date(startDate));
+    // Enforce single count — remove ALL previous nekiim (including completed)
+    data.nekiim = [];
+
+    let hefsekRd;
+    let hefsekDateStr;
+    if (hefsekHeb && hefsekHeb.year && hefsekHeb.month && hefsekHeb.day) {
+      // Hebrew date input
+      hefsekRd = HebrewDateUtils.heb2rd({ year: hefsekHeb.year, month: hefsekHeb.month, day: hefsekHeb.day });
+      const gregDate = HebrewDateUtils.rd2greg(hefsekRd);
+      hefsekDateStr = gregDate.getFullYear() + '-' + String(gregDate.getMonth()+1).padStart(2,'0') + '-' + String(gregDate.getDate()).padStart(2,'0');
+    } else if (startDate) {
+      hefsekRd = HebrewDateUtils.greg2rd(new Date(startDate));
+      hefsekDateStr = startDate;
+    } else {
+      return res.status(400).json({ error: 'startDate or hefsekHeb is required' });
+    }
+
     const firstNakiRd = hefsekRd + 1; // Day after hefsek
     const tevilahRd = hefsekRd + 8; // Night of 8th day
-    const hefsekHeb = HebrewDateUtils.rd2heb(hefsekRd);
+    const hefsekHebObj = HebrewDateUtils.rd2heb(hefsekRd);
     const tevilahHeb = HebrewDateUtils.rd2heb(tevilahRd);
     const tevilahGreg = HebrewDateUtils.rd2greg(tevilahRd);
 
     const nekiim = {
       id: Date.now(),
       cycle_id: cycleId,
-      hefsek_date: startDate,
+      hefsek_date: hefsekDateStr,
       hefsek_rd: hefsekRd,
-      hefsek_heb: hefsekHeb,
+      hefsek_heb: hefsekHebObj,
       first_naki_rd: firstNakiRd,
       tevilah_rd: tevilahRd,
       tevilah_date: tevilahGreg.getFullYear() + '-' + String(tevilahGreg.getMonth()+1).padStart(2,'0') + '-' + String(tevilahGreg.getDate()).padStart(2,'0'),
       tevilah_heb: tevilahHeb,
-      days: [false, false, false, false, false, false, false],
+      // 14 checks: pairs of [night, day] for each of the 7 days
+      days: [
+        { night: false, day: false },
+        { night: false, day: false },
+        { night: false, day: false },
+        { night: false, day: false },
+        { night: false, day: false },
+        { night: false, day: false },
+        { night: false, day: false }
+      ],
       completed: false
     };
 
@@ -218,13 +243,14 @@ router.post('/:id/nekiim', (req, res) => {
 /**
  * PUT /api/cycles/:id/nekiim/:nekiimId
  * Update a nekiim day (mark as clean or not).
- * Body: { day: 0-6, clean: true/false }
+ * Body: { day: 0-6, onah: "night"|"day", clean: true/false }
  */
 router.put('/:id/nekiim/:nekiimId', (req, res) => {
   try {
     const nekiimId = parseInt(req.params.nekiimId, 10);
-    const { day, clean } = req.body;
+    const { day, onah, clean } = req.body;
     if (day === undefined || day < 0 || day > 6) return res.status(400).json({ error: 'day must be 0-6' });
+    if (!onah || (onah !== 'night' && onah !== 'day')) return res.status(400).json({ error: "onah must be 'night' or 'day'" });
 
     const { loadUserData, saveUserData } = require('../services/userDataService');
     const data = loadUserData(req.userId, req.encKey);
@@ -233,11 +259,40 @@ router.put('/:id/nekiim/:nekiimId', (req, res) => {
     const nekiim = data.nekiim.find(n => n.id === nekiimId);
     if (!nekiim) return res.status(404).json({ error: 'Not found' });
 
-    nekiim.days[day] = !!clean;
-    nekiim.completed = nekiim.days.every(d => d === true);
+    // Migrate old format (array of booleans) to new format (array of objects)
+    if (Array.isArray(nekiim.days) && typeof nekiim.days[0] === 'boolean') {
+      nekiim.days = nekiim.days.map(function(d) { return { night: d, day: d }; });
+    }
+
+    nekiim.days[day][onah] = !!clean;
+    // Completed when all 14 checks are true
+    nekiim.completed = nekiim.days.every(d => d.night && d.day);
 
     saveUserData(req.userId, data, req.encKey);
     return res.json(nekiim);
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * DELETE /api/cycles/:id/nekiim/:nekiimId
+ * Cancel/delete a nekiim count.
+ */
+router.delete('/:id/nekiim/:nekiimId', (req, res) => {
+  try {
+    const nekiimId = parseInt(req.params.nekiimId, 10);
+
+    const { loadUserData, saveUserData } = require('../services/userDataService');
+    const data = loadUserData(req.userId, req.encKey);
+    if (!data.nekiim) return res.status(404).json({ error: 'Not found' });
+
+    const idx = data.nekiim.findIndex(n => n.id === nekiimId);
+    if (idx === -1) return res.status(404).json({ error: 'Not found' });
+
+    data.nekiim.splice(idx, 1);
+    saveUserData(req.userId, data, req.encKey);
+    return res.json({ message: 'Nekiim count deleted' });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });
   }

@@ -41,6 +41,20 @@ var Settings = (function() {
       });
     }
 
+    // Nekiim settings
+    var nekiimReminderCheckbox = document.getElementById('setting-nekiim-reminder');
+    if (nekiimReminderCheckbox) {
+      nekiimReminderCheckbox.addEventListener('change', function() {
+        saveNekiimSettings();
+      });
+    }
+    var nekiimCalendarCheckbox = document.getElementById('setting-nekiim-calendar');
+    if (nekiimCalendarCheckbox) {
+      nekiimCalendarCheckbox.addEventListener('change', function() {
+        saveNekiimSettings();
+      });
+    }
+
     // Multi-email management
     var addEmailBtn = document.getElementById('add-reminder-email-btn');
     if (addEmailBtn) {
@@ -201,6 +215,26 @@ var Settings = (function() {
         // Reminder settings
         var reminderEnabled = document.getElementById('setting-reminder-enabled');
         if (reminderEnabled) reminderEnabled.checked = !!data.reminder_enabled;
+
+        // Nekiim settings
+        var nekiimReminder = document.getElementById('setting-nekiim-reminder');
+        if (nekiimReminder) nekiimReminder.checked = !!data.nekiim_reminder;
+        var nekiimCalendar = document.getElementById('setting-nekiim-calendar');
+        if (nekiimCalendar) nekiimCalendar.checked = !!data.nekiim_show_calendar;
+
+        // City/location — match saved lat/lng to dropdown option
+        if (data.latitude && data.longitude) {
+          var citySelect = document.getElementById('setting-city');
+          if (citySelect) {
+            var savedCoords = data.latitude + ',' + data.longitude;
+            for (var i = 0; i < citySelect.options.length; i++) {
+              if (citySelect.options[i].value === savedCoords) {
+                citySelect.value = savedCoords;
+                break;
+              }
+            }
+          }
+        }
       })
       .catch(function() {
         // Default to rama and all defaults
@@ -262,6 +296,35 @@ var Settings = (function() {
         if (msgEl) {
           msgEl.className = 'success-message';
           msgEl.textContent = 'הגדרות תזכורת נשמרו ✓';
+          setTimeout(function() { msgEl.textContent = ''; }, 3000);
+        }
+      })
+      .catch(function(err) {
+        if (msgEl) {
+          msgEl.className = 'error-message';
+          msgEl.textContent = err.message || 'שגיאה בשמירה';
+          setTimeout(function() { msgEl.textContent = ''; msgEl.className = 'success-message'; }, 3000);
+        }
+      });
+  }
+
+  function saveNekiimSettings() {
+    var nekiimReminder = document.getElementById('setting-nekiim-reminder');
+    var nekiimCalendar = document.getElementById('setting-nekiim-calendar');
+
+    var payload = {
+      nekiim_reminder: nekiimReminder ? nekiimReminder.checked : false,
+      nekiim_show_calendar: nekiimCalendar ? nekiimCalendar.checked : false
+    };
+
+    var msgEl = document.getElementById('nekiim-settings-message');
+    if (msgEl) msgEl.textContent = '';
+
+    Api.put('/api/settings', payload)
+      .then(function() {
+        if (msgEl) {
+          msgEl.className = 'success-message';
+          msgEl.textContent = 'הגדרות 7 נקיים נשמרו ✓';
           setTimeout(function() { msgEl.textContent = ''; }, 3000);
         }
       })

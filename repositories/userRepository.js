@@ -1,7 +1,7 @@
 const db = require('../db');
 const crypto = require('crypto');
 
-const SETTINGS_COLUMNS = 'id, email, posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, reminder_enabled, reminder_email, created_at';
+const SETTINGS_COLUMNS = 'id, email, posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, reminder_enabled, reminder_email, nekiim_reminder, nekiim_show_calendar, latitude, longitude, created_at';
 
 /**
  * Create a new user and return the user object (without password_hash).
@@ -74,7 +74,7 @@ function updatePosek(userId, posek) {
  * @returns {Object} updated user
  */
 function updateSettings(userId, settings) {
-  const allowedFields = ['posek', 'onah_beinonit_31', 'or_zarua', 'haflagah_shlishit', 'hachodesh_overflow', 'reminder_enabled', 'reminder_email', 'latitude', 'longitude'];
+  const allowedFields = ['posek', 'onah_beinonit_31', 'or_zarua', 'haflagah_shlishit', 'hachodesh_overflow', 'reminder_enabled', 'reminder_email', 'latitude', 'longitude', 'nekiim_reminder', 'nekiim_show_calendar'];
   const setClauses = [];
   const values = [];
 

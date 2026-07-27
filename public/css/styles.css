@@ -408,6 +408,9 @@ body {
 .cal-marker.marker-haflagah3 { background: #E65100; }
 .cal-marker.marker-hachodesh { background: #7B1FA2; }
 .cal-marker.marker-reiyah { background: #D32F2F; font-weight: 700; }
+.cal-marker.marker-nekiim { background: #66BB6A; }
+.cal-marker.marker-nekiim-done { background: #388E3C; font-weight: 700; }
+.cal-marker.marker-tevilah { background: #26C6DA; font-weight: 700; }
 
 /* Or Zarua — slightly transparent with dashed border */
 .cal-marker.marker-az {

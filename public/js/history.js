@@ -312,16 +312,11 @@ var History = (function() {
       nekiimBtn.style.padding = '0.2rem 0.4rem';
       nekiimBtn.textContent = '7️⃣';
       nekiimBtn.title = 'התחל שבעה נקיים';
-      nekiimBtn.addEventListener('click', (function(cycleId, cycleStartDate, hebDate) {
+      nekiimBtn.addEventListener('click', (function(cycleId, hebDate) {
         return function() {
-          var hefsekDate = cycleStartDate;
-          if (confirm('להתחיל ספירת 7 נקיים?\n\nיום ההפסק: ' + HebrewDate.format(hebDate) + '\n(7 הנקיים מתחילים למחרת)')) {
-            Api.post('/api/cycles/' + cycleId + '/nekiim', { startDate: hefsekDate })
-              .then(function() { render(); })
-              .catch(function(err) { alert(err.message); });
-          }
+          showHefsekDatePicker(cycleId, hebDate);
         };
-      })(cycle.id, cycle.start_date, { year: cycle.start_heb_year, month: cycle.start_heb_month, day: cycle.start_heb_day }));
+      })(cycle.id, { year: cycle.start_heb_year, month: cycle.start_heb_month, day: cycle.start_heb_day }));
       actionsCell.appendChild(nekiimBtn);
 
       row.appendChild(actionsCell);
@@ -626,6 +621,98 @@ var History = (function() {
       .catch(function(err) { alert(err.message || 'שגיאה'); });
   }
 
+  function showHefsekDatePicker(cycleId, defaultHeb) {
+    var overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+
+    var dialog = document.createElement('div');
+    dialog.className = 'confirm-dialog';
+    dialog.style.cssText = 'max-width:340px; padding:1.5rem;';
+
+    dialog.innerHTML =
+      '<h3 style="margin-bottom:0.75rem; font-size:1rem;">בחרי תאריך הפסק טהרה</h3>' +
+      '<p style="font-size:0.85rem; color:var(--color-text-secondary); margin-bottom:1rem;">7 הנקיים מתחילים למחרת יום ההפסק.</p>' +
+      '<div class="form-row" style="gap:0.5rem;">' +
+      '  <div class="form-group" style="flex:0.6;"><select id="hefsek-day"><option value="">יום</option></select></div>' +
+      '  <div class="form-group" style="flex:1;"><select id="hefsek-month"><option value="">חודש</option>' +
+      '    <option value="7">תשרי</option><option value="8">חשוון</option><option value="9">כסלו</option>' +
+      '    <option value="10">טבת</option><option value="11">שבט</option><option value="12">אדר</option>' +
+      '    <option value="13">אדר ב׳</option><option value="1">ניסן</option><option value="2">אייר</option>' +
+      '    <option value="3">סיוון</option><option value="4">תמוז</option><option value="5">אב</option>' +
+      '    <option value="6">אלול</option>' +
+      '  </select></div>' +
+      '  <div class="form-group" style="flex:0.8;"><select id="hefsek-year"></select></div>' +
+      '</div>' +
+      '<div class="confirm-actions" style="margin-top:1rem;">' +
+      '  <button class="btn btn-primary" id="hefsek-confirm">התחל ספירה</button>' +
+      '  <button class="btn btn-secondary" id="hefsek-cancel">ביטול</button>' +
+      '</div>' +
+      '<p id="hefsek-error" style="color:var(--color-danger); font-size:0.85rem; margin-top:0.5rem;"></p>';
+
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    // Populate dropdowns
+    var daySelect = document.getElementById('hefsek-day');
+    var monthSelect = document.getElementById('hefsek-month');
+    var yearSelect = document.getElementById('hefsek-year');
+
+    populateDays(daySelect, 30);
+    populateYears(yearSelect);
+
+    // Set defaults: hefsek = ראיה + 4 days (hefsek is on the 5th day from the reiyah)
+    if (defaultHeb) {
+      // Compute hefsek default: Hebrew date + 4 days
+      var gregStart = HebrewDate.heb2greg(defaultHeb.year, defaultHeb.month, defaultHeb.day);
+      gregStart.setDate(gregStart.getDate() + 4);
+      var hefsekDefault = HebrewDate.greg2heb(gregStart.getFullYear(), gregStart.getMonth() + 1, gregStart.getDate());
+
+      yearSelect.value = String(hefsekDefault.year);
+      monthSelect.value = String(hefsekDefault.month);
+      var maxDay = getMaxDays(hefsekDefault.month, hefsekDefault.year);
+      populateDays(daySelect, maxDay);
+      daySelect.value = String(hefsekDefault.day);
+    }
+
+    // Update days on month/year change
+    monthSelect.addEventListener('change', function() {
+      var m = parseInt(monthSelect.value);
+      var y = parseInt(yearSelect.value);
+      populateDays(daySelect, getMaxDays(m, y));
+    });
+    yearSelect.addEventListener('change', function() {
+      var m = parseInt(monthSelect.value);
+      var y = parseInt(yearSelect.value);
+      populateDays(daySelect, getMaxDays(m, y));
+    });
+
+    // Confirm
+    document.getElementById('hefsek-confirm').addEventListener('click', function() {
+      var d = daySelect.value, m = monthSelect.value, y = yearSelect.value;
+      if (!d || !m || !y) {
+        document.getElementById('hefsek-error').textContent = 'נא למלא את כל השדות';
+        return;
+      }
+      var payload = { hefsekHeb: { year: parseInt(y), month: parseInt(m), day: parseInt(d) } };
+      Api.post('/api/cycles/' + cycleId + '/nekiim', payload)
+        .then(function() {
+          document.body.removeChild(overlay);
+          render();
+        })
+        .catch(function(err) {
+          document.getElementById('hefsek-error').textContent = err.message || 'שגיאה';
+        });
+    });
+
+    // Cancel
+    document.getElementById('hefsek-cancel').addEventListener('click', function() {
+      document.body.removeChild(overlay);
+    });
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) document.body.removeChild(overlay);
+    });
+  }
+
   function renderNekiim(nekiimList) {
     var container = document.getElementById('nekiim-list');
     if (!container) return;
@@ -640,14 +727,38 @@ var History = (function() {
       var div = document.createElement('div');
       div.style.cssText = 'margin-bottom:1rem; padding:0.75rem; border:1px solid var(--color-border); border-radius:8px;';
 
+      // Header row with title and cancel button
+      var headerDiv = document.createElement('div');
+      headerDiv.style.cssText = 'display:flex; justify-content:space-between; align-items:center;';
+
       var title = document.createElement('p');
-      title.style.fontWeight = '600';
+      title.style.cssText = 'font-weight:600; margin:0;';
       var hefsekStr = n.hefsek_heb ? HebrewDate.format(n.hefsek_heb) : n.hefsek_date || n.start_date;
-      var tevilahStr = n.tevilah_heb ? HebrewDate.format(n.tevilah_heb) : '';
       title.textContent = 'הפסק טהרה: ' + hefsekStr;
       if (n.completed) title.textContent += ' ✅';
-      div.appendChild(title);
+      headerDiv.appendChild(title);
 
+      // Cancel button (always visible — allows deleting any count)
+      var cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn btn-danger';
+      cancelBtn.style.cssText = 'font-size:0.7rem; padding:0.2rem 0.5rem;';
+      cancelBtn.textContent = '✕ מחיקה';
+      cancelBtn.title = 'מחיקת ספירה';
+      cancelBtn.addEventListener('click', (function(nekiimId, cycleId) {
+        return function() {
+          if (confirm('למחוק את הספירה?')) {
+            Api.del('/api/cycles/' + cycleId + '/nekiim/' + nekiimId)
+              .then(function() { render(); })
+              .catch(function(err) { alert(err.message || 'שגיאה'); });
+          }
+        };
+      })(n.id, n.cycle_id));
+      headerDiv.appendChild(cancelBtn);
+
+      div.appendChild(headerDiv);
+
+      // Tevilah date
+      var tevilahStr = n.tevilah_heb ? HebrewDate.format(n.tevilah_heb) : '';
       if (tevilahStr) {
         var tevilahP = document.createElement('p');
         tevilahP.style.cssText = 'font-size:0.85rem; color:var(--color-primary); margin-top:0.25rem;';
@@ -655,34 +766,103 @@ var History = (function() {
         div.appendChild(tevilahP);
       }
 
-      var daysDiv = document.createElement('div');
-      daysDiv.style.cssText = 'display:flex; gap:0.5rem; margin-top:0.5rem;';
+      // 14 checkboxes: 7 days x 2 (night + day)
+      var daysGrid = document.createElement('div');
+      daysGrid.style.cssText = 'display:grid; grid-template-columns:auto repeat(7, 1fr); gap:0.25rem; margin-top:0.75rem; font-size:0.8rem; text-align:center;';
 
-      for (var i = 0; i < 7; i++) {
-        var dayBtn = document.createElement('button');
-        dayBtn.style.cssText = 'width:36px; height:36px; border-radius:50%; border:2px solid; cursor:pointer; font-size:0.8rem;';
-        dayBtn.textContent = (i + 1);
-        if (n.days[i]) {
-          dayBtn.style.background = '#66BB6A';
-          dayBtn.style.borderColor = '#388E3C';
-          dayBtn.style.color = '#fff';
-        } else {
-          dayBtn.style.background = 'var(--color-surface)';
-          dayBtn.style.borderColor = 'var(--color-border)';
-          dayBtn.style.color = 'var(--color-text)';
+      // Compute Hebrew dates for each of the 7 days (hefsek + 1 + i)
+      var dayDates = [];
+      if (n.hefsek_date) {
+        for (var hd = 0; hd < 7; hd++) {
+          var base = new Date(n.hefsek_date);
+          base.setDate(base.getDate() + 1 + hd);
+          var hebD = HebrewDate.greg2heb(base.getFullYear(), base.getMonth() + 1, base.getDate());
+          dayDates.push(hebD);
         }
-        (function(dayIndex, nekiimId, cycleId) {
-          dayBtn.addEventListener('click', function() {
-            Api.put('/api/cycles/' + cycleId + '/nekiim/' + nekiimId, { day: dayIndex, clean: !n.days[dayIndex] })
-              .then(function() { render(); });
-          });
-        })(i, n.id, n.cycle_id);
-        daysDiv.appendChild(dayBtn);
       }
 
-      div.appendChild(daysDiv);
+      // Header row: Hebrew dates with day number
+      var cornerEl = document.createElement('div');
+      cornerEl.textContent = '';
+      daysGrid.appendChild(cornerEl);
+      for (var h = 0; h < 7; h++) {
+        var dayHeader = document.createElement('div');
+        dayHeader.style.cssText = 'font-weight:600; font-size:0.7rem; line-height:1.2;';
+        var numLine = document.createElement('div');
+        numLine.style.cssText = 'font-size:0.85rem; font-weight:700;';
+        numLine.textContent = (h + 1);
+        dayHeader.appendChild(numLine);
+        if (dayDates[h]) {
+          var dateLine = document.createElement('div');
+          dateLine.style.cssText = 'font-size:0.65rem; color:var(--color-text-secondary); font-weight:400;';
+          dateLine.textContent = HebrewDate.toGematria(dayDates[h].day) + ' ' + HebrewDate.getMonthName(dayDates[h].month);
+          dayHeader.appendChild(dateLine);
+        }
+        daysGrid.appendChild(dayHeader);
+      }
+
+      // Migrate old boolean array format for display
+      var days = n.days || [];
+      if (days.length > 0 && typeof days[0] === 'boolean') {
+        days = days.map(function(d) { return { night: d, day: d }; });
+      }
+
+      // Night row (🌙)
+      var nightLabel = document.createElement('div');
+      nightLabel.style.cssText = 'display:flex; align-items:center; font-size:0.75rem;';
+      nightLabel.textContent = '🌙';
+      daysGrid.appendChild(nightLabel);
+      for (var i = 0; i < 7; i++) {
+        var nightCheck = createCheckbox(n, i, 'night', days[i] ? days[i].night : false);
+        daysGrid.appendChild(nightCheck);
+      }
+
+      // Day row (☀️)
+      var dayLabel = document.createElement('div');
+      dayLabel.style.cssText = 'display:flex; align-items:center; font-size:0.75rem;';
+      dayLabel.textContent = '☀️';
+      daysGrid.appendChild(dayLabel);
+      for (var j = 0; j < 7; j++) {
+        var dayCheck = createCheckbox(n, j, 'day', days[j] ? days[j].day : false);
+        daysGrid.appendChild(dayCheck);
+      }
+
+      div.appendChild(daysGrid);
+
+      // Progress indicator
+      var checkedCount = 0;
+      for (var k = 0; k < 7; k++) {
+        if (days[k]) {
+          if (days[k].night) checkedCount++;
+          if (days[k].day) checkedCount++;
+        }
+      }
+      var progressP = document.createElement('p');
+      progressP.style.cssText = 'font-size:0.75rem; color:var(--color-text-secondary); margin-top:0.5rem; text-align:center;';
+      progressP.textContent = checkedCount + '/14 בדיקות';
+      div.appendChild(progressP);
+
       container.appendChild(div);
     });
+  }
+
+  function createCheckbox(nekiimEntry, dayIndex, onah, checked) {
+    var wrapper = document.createElement('div');
+    wrapper.style.cssText = 'display:flex; justify-content:center; align-items:center;';
+
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = checked;
+    cb.style.cssText = 'width:20px; height:20px; cursor:pointer; accent-color:#388E3C;';
+    cb.addEventListener('change', (function(nId, cId, dIdx, o) {
+      return function() {
+        Api.put('/api/cycles/' + cId + '/nekiim/' + nId, { day: dIdx, onah: o, clean: this.checked })
+          .then(function() { render(); });
+      };
+    })(nekiimEntry.id, nekiimEntry.cycle_id, dayIndex, onah));
+
+    wrapper.appendChild(cb);
+    return wrapper;
   }
 
   return {

@@ -204,6 +204,14 @@ try {
   db.exec(`ALTER TABLE users ADD COLUMN reminder_email TEXT`);
 } catch(e) {}
 
+// Migration: nekiim settings columns
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN nekiim_reminder INTEGER NOT NULL DEFAULT 0`);
+} catch(e) {}
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN nekiim_show_calendar INTEGER NOT NULL DEFAULT 0`);
+} catch(e) {}
+
 // Migration: mechitzot table for haflagah reset boundaries
 db.exec(`
   CREATE TABLE IF NOT EXISTS mechitzot (

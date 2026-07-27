@@ -70,7 +70,11 @@ router.get('/', (req, res) => {
       haflagah_shlishit: !!user.haflagah_shlishit,
       hachodesh_overflow: !!user.hachodesh_overflow,
       reminder_enabled: !!user.reminder_enabled,
-      reminder_email: user.reminder_email || ''
+      reminder_email: user.reminder_email || '',
+      nekiim_reminder: !!user.nekiim_reminder,
+      nekiim_show_calendar: !!user.nekiim_show_calendar,
+      latitude: user.latitude || null,
+      longitude: user.longitude || null
     });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });
@@ -84,7 +88,7 @@ router.get('/', (req, res) => {
  */
 router.put('/', (req, res) => {
   try {
-    const { posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, reminder_enabled, reminder_email, latitude, longitude } = req.body;
+    const { posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, reminder_enabled, reminder_email, latitude, longitude, nekiim_reminder, nekiim_show_calendar } = req.body;
 
     // Validate posek if provided
     if (posek !== undefined && posek !== 'rama' && posek !== 'mechaber') {
@@ -102,6 +106,8 @@ router.put('/', (req, res) => {
     if (reminder_email !== undefined) settingsUpdate.reminder_email = reminder_email;
     if (latitude !== undefined) settingsUpdate.latitude = latitude;
     if (longitude !== undefined) settingsUpdate.longitude = longitude;
+    if (nekiim_reminder !== undefined) settingsUpdate.nekiim_reminder = nekiim_reminder;
+    if (nekiim_show_calendar !== undefined) settingsUpdate.nekiim_show_calendar = nekiim_show_calendar;
 
     if (Object.keys(settingsUpdate).length === 0) {
       return res.status(400).json({ error: 'No settings provided' });
@@ -127,6 +133,8 @@ router.put('/', (req, res) => {
       hachodesh_overflow: !!user.hachodesh_overflow,
       reminder_enabled: !!user.reminder_enabled,
       reminder_email: user.reminder_email || '',
+      nekiim_reminder: !!user.nekiim_reminder,
+      nekiim_show_calendar: !!user.nekiim_show_calendar,
       message: hasHalachicChange ? 'Settings updated, vestot recalculated' : 'Settings updated'
     });
   } catch (err) {

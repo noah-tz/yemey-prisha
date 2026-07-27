@@ -118,23 +118,88 @@ var Calendar = (function() {
       to = fmtDate(currentYear, currentMonth, daysInMonth);
     }
 
-    Api.get('/api/vestot/calendar?from=' + from + '&to=' + to)
-      .then(function(data) {
+    // Fetch vestot + optionally nekiim for calendar display
+    var vestotPromise = Api.get('/api/vestot/calendar?from=' + from + '&to=' + to);
+    var settingsPromise = Api.get('/api/settings');
+
+    Promise.all([vestotPromise, settingsPromise])
+      .then(function(results) {
+        var data = results[0];
+        var settings = results[1];
         var vestotArray = (data && data.vestot) ? data.vestot : [];
         var cyclesArray = (data && data.cycles) ? data.cycles : [];
-        if (calendarMode === 'hebrew') {
-          renderHebrewGrid(vestotArray, cyclesArray);
+
+        if (settings.nekiim_show_calendar) {
+          // Also fetch nekiim and build date map for calendar markers
+          Api.get('/api/cycles/nekiim')
+            .then(function(nekiimData) {
+              var nekiimDates = buildNekiimDateMap(nekiimData.nekiim || [], from, to);
+              if (calendarMode === 'hebrew') {
+                renderHebrewGrid(vestotArray, cyclesArray, nekiimDates);
+              } else {
+                renderGrid(vestotArray, cyclesArray, nekiimDates);
+              }
+            })
+            .catch(function() {
+              if (calendarMode === 'hebrew') {
+                renderHebrewGrid(vestotArray, cyclesArray, {});
+              } else {
+                renderGrid(vestotArray, cyclesArray, {});
+              }
+            });
         } else {
-          renderGrid(vestotArray, cyclesArray);
+          if (calendarMode === 'hebrew') {
+            renderHebrewGrid(vestotArray, cyclesArray, {});
+          } else {
+            renderGrid(vestotArray, cyclesArray, {});
+          }
         }
       })
       .catch(function() {
         if (calendarMode === 'hebrew') {
-          renderHebrewGrid([], []);
+          renderHebrewGrid([], [], {});
         } else {
-          renderGrid([], []);
+          renderGrid([], [], {});
         }
       });
+  }
+
+  /**
+   * Build a map of date -> nekiim marker info for calendar display.
+   * For each active nekiim, marks the 7 counting days.
+   */
+  function buildNekiimDateMap(nekiimList, fromStr, toStr) {
+    var map = {};
+    nekiimList.forEach(function(n) {
+      if (!n.hefsek_date) return;
+      for (var i = 0; i < 7; i++) {
+        // Day after hefsek + i days
+        var base = new Date(n.hefsek_date);
+        base.setDate(base.getDate() + 1 + i);
+        var dateStr = base.getFullYear() + '-' + String(base.getMonth()+1).padStart(2,'0') + '-' + String(base.getDate()).padStart(2,'0');
+        var days = n.days || [];
+        var dayData = days[i];
+        var checked = false;
+        if (typeof dayData === 'boolean') {
+          checked = dayData;
+        } else if (dayData && typeof dayData === 'object') {
+          checked = dayData.night && dayData.day;
+        }
+        map[dateStr] = { dayNum: i + 1, checked: checked, completed: n.completed, type: 'nekiim' };
+      }
+      // Add tevilah day marker on the 7th counting day (same day as last nekiim day)
+      // Tevilah night is the night after the 7th clean day
+      var tevBase = new Date(n.hefsek_date);
+      tevBase.setDate(tevBase.getDate() + 7); // hefsek + 7 = 7th naki day
+      var tevStr = tevBase.getFullYear() + '-' + String(tevBase.getMonth()+1).padStart(2,'0') + '-' + String(tevBase.getDate()).padStart(2,'0');
+      if (!map[tevStr]) {
+        map[tevStr] = { type: 'tevilah', completed: n.completed };
+      } else if (map[tevStr].type === 'nekiim') {
+        // Day 7 already has a nekiim marker — add tevilah flag to it
+        map[tevStr].tevilah = true;
+      }
+    });
+    return map;
   }
 
   function updateTitle() {
@@ -198,7 +263,7 @@ var Calendar = (function() {
     });
   }
 
-  function renderHebrewGrid(vestotData, cyclesArray) {
+  function renderHebrewGrid(vestotData, cyclesArray, nekiimDates) {
     var container = document.getElementById('cal-days');
     container.innerHTML = '';
 
@@ -253,7 +318,7 @@ var Calendar = (function() {
       cell.appendChild(gregEl);
 
       // Markers container
-      var hasMarkers = (map[dateStr] || cyclesMap[dateStr]);
+      var hasMarkers = (map[dateStr] || cyclesMap[dateStr] || (nekiimDates && nekiimDates[dateStr]));
       if (hasMarkers) {
         var markers = document.createElement('div');
         markers.className = 'cal-markers';
@@ -267,6 +332,28 @@ var Calendar = (function() {
             marker.textContent = icon + ' ראיה';
             markers.appendChild(marker);
           });
+        }
+
+        // Nekiim markers
+        if (nekiimDates && nekiimDates[dateStr]) {
+          var nk = nekiimDates[dateStr];
+          if (nk.type === 'tevilah') {
+            var nkMarker = document.createElement('span');
+            nkMarker.className = 'cal-marker marker-tevilah';
+            nkMarker.textContent = '🛁 טבילה';
+            markers.appendChild(nkMarker);
+          } else {
+            var nkMarker = document.createElement('span');
+            nkMarker.className = 'cal-marker marker-nekiim' + (nk.checked ? ' marker-nekiim-done' : '');
+            nkMarker.textContent = (nk.checked ? '✓' : '○') + ' נקיים ' + nk.dayNum;
+            markers.appendChild(nkMarker);
+            if (nk.tevilah) {
+              var tevMarker = document.createElement('span');
+              tevMarker.className = 'cal-marker marker-tevilah';
+              tevMarker.textContent = '🛁 טבילה';
+              markers.appendChild(tevMarker);
+            }
+          }
         }
 
         // Veset markers
@@ -294,7 +381,7 @@ var Calendar = (function() {
     }
   }
 
-  function renderGrid(vestotData, cyclesArray) {
+  function renderGrid(vestotData, cyclesArray, nekiimDates) {
     var container = document.getElementById('cal-days');
     container.innerHTML = '';
 
@@ -348,7 +435,7 @@ var Calendar = (function() {
       cell.appendChild(hebEl);
 
       // Markers container
-      var hasMarkers = (map[dateStr] || cyclesMap[dateStr]);
+      var hasMarkers = (map[dateStr] || cyclesMap[dateStr] || (nekiimDates && nekiimDates[dateStr]));
       if (hasMarkers) {
         var markers = document.createElement('div');
         markers.className = 'cal-markers';
@@ -362,6 +449,28 @@ var Calendar = (function() {
             marker.textContent = icon + ' ראיה';
             markers.appendChild(marker);
           });
+        }
+
+        // Nekiim markers
+        if (nekiimDates && nekiimDates[dateStr]) {
+          var nk = nekiimDates[dateStr];
+          if (nk.type === 'tevilah') {
+            var nkMarker = document.createElement('span');
+            nkMarker.className = 'cal-marker marker-tevilah';
+            nkMarker.textContent = '🛁 טבילה';
+            markers.appendChild(nkMarker);
+          } else {
+            var nkMarker = document.createElement('span');
+            nkMarker.className = 'cal-marker marker-nekiim' + (nk.checked ? ' marker-nekiim-done' : '');
+            nkMarker.textContent = (nk.checked ? '✓' : '○') + ' נקיים ' + nk.dayNum;
+            markers.appendChild(nkMarker);
+            if (nk.tevilah) {
+              var tevMarker = document.createElement('span');
+              tevMarker.className = 'cal-marker marker-tevilah';
+              tevMarker.textContent = '🛁 טבילה';
+              markers.appendChild(tevMarker);
+            }
+          }
         }
 
         // Veset markers

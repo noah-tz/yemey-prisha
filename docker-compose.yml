@@ -13,7 +13,7 @@ services:
       - PORT=3000
       - DB_PATH=/data/vestot.db
       - SESSION_SECRET=${SESSION_SECRET}
-      - ALLOW_REGISTRATION=false
+      - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-false}
       - NODE_ENV=production
       - SMTP_HOST=smtp-relay.brevo.com
       - SMTP_PORT=587
