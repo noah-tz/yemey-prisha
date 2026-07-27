@@ -46,12 +46,12 @@
 <tr>
 <td width="50%">
 
-### 🔒 Zero-Knowledge Encryption
+### 🔒 Server-Side Encryption
 - AES-256-GCM field-level encryption
 - Single encrypted blob per user
-- Server admin sees NOTHING
+- Data encrypted at rest in database
 - Key derived from password (PBKDF2)
-- No plaintext dates, counts, or patterns
+- No plaintext dates, counts, or patterns stored
 
 </td>
 <td width="50%">
@@ -117,25 +117,18 @@ graph TB
 | **Transport** | HTTPS/TLS (Let's Encrypt) |
 | **Storage** | Single AES-256-GCM encrypted blob per user |
 | **Key Derivation** | PBKDF2 (100K iterations, SHA-512) |
-| **At Rest** | Server admin sees only opaque blob — no dates, no counts, no patterns |
+| **At Rest** | AES-256-GCM encrypted blob — no plaintext dates, counts, or patterns in database |
 | **Passwords** | bcrypt (12 rounds) |
 | **Session** | httpOnly cookie, SQLite-backed |
 
-### What the server admin can see:
+### What the server admin sees in the database:
 ```sql
 SELECT * FROM user_data;
 -- user_id: 1000
--- encrypted_blob: "7a9f2bc1e4d8... (opaque gibberish) ...f3a2"
--- That's it. No record counts. No dates. Nothing.
+-- encrypted_blob: "7a9f2bc1e4d8... (opaque) ...f3a2"
 ```
 
-### What the server admin CANNOT see:
-- ❌ How many cycles a user has
-- ❌ Any dates (Hebrew or Gregorian)
-- ❌ Onah (day/night)
-- ❌ Calculated prisha days
-- ❌ User's halachic settings
-- ❌ Mechitza (partition) locations
+> **Note:** The encryption protects data at rest. The server processes data in memory during operations (e.g., sending reminders). The encryption key is wrapped with a server-side secret. This is NOT end-to-end encryption — it protects against database theft and casual access, not against a malicious server operator. See `/terms.html` for full disclosure.
 
 ---
 
@@ -331,6 +324,6 @@ UNLICENSED — Private project.
 
 *Built with 🌙 for the Jewish community*
 
-**Hebrew dates • Halachic calculations • Zero-knowledge encryption • AI-ready**
+**Hebrew dates • Halachic calculations • Encrypted at rest • AI-ready**
 
 </div>
