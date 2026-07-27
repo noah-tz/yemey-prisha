@@ -165,6 +165,18 @@ class VesetCalculationEngine {
     const hachodesh = this._calcHachodesh(record, allRecords, index, posek, settings.hachodesh_overflow);
     if (hachodesh) vestot.push(hachodesh);
 
+    // === Kavua Detection ===
+    // Check if veset is kavua (established — 3 consecutive identical occurrences)
+    const effectiveIntervals = intervals.slice(effectiveStartIndex, index);
+    const effectiveRecords = allRecords.slice(0, index + 1);
+    const kavua = this._checkKavua(effectiveRecords, index, effectiveIntervals);
+
+    // Mark relevant vestot as kavua
+    vestot.forEach(v => {
+      if (v.type === 'haflagah' && kavua.haflagah_kavua) v.is_kavua = 1;
+      if (v.type === 'hachodesh' && kavua.hachodesh_kavua) v.is_kavua = 1;
+    });
+
     // === Or Zarua: add opposite onah for haflagah and hachodesh ONLY ===
     // Onah Beinonit already has both onahs natively (not or_zarua related)
     if (settings.or_zarua) {
@@ -521,6 +533,35 @@ class VesetCalculationEngine {
         is_or_zarua: 1
       };
     }
+  }
+
+  // ========== Kavua Detection ==========
+
+  /**
+   * Check if a veset is kavua (established — 3 consecutive identical occurrences).
+   * Returns kavua status for haflagah and hachodesh.
+   */
+  _checkKavua(records, index, intervals) {
+    const result = { haflagah_kavua: false, hachodesh_kavua: false };
+
+    // Haflagah kavua: 3 consecutive identical intervals
+    if (intervals.length >= 3) {
+      const last3 = intervals.slice(-3);
+      if (last3[0] === last3[1] && last3[1] === last3[2]) {
+        result.haflagah_kavua = true;
+      }
+    }
+
+    // Hachodesh kavua: 3 consecutive same Hebrew day
+    if (records.length >= 3) {
+      const last3 = records.slice(-3);
+      const days = last3.map(r => r.start_heb_day);
+      if (days[0] === days[1] && days[1] === days[2]) {
+        result.hachodesh_kavua = true;
+      }
+    }
+
+    return result;
   }
 
   // ========== Helper Methods ==========

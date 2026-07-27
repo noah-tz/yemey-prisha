@@ -8,6 +8,28 @@ const cycleService = require('../services/cycleService');
 router.use(requireAuth);
 
 /**
+ * GET /api/settings/sunset?date=YYYY-MM-DD
+ * Get sunset time for a specific date at the user's location.
+ */
+router.get('/sunset', (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) return res.status(400).json({ error: 'date is required' });
+
+    const db = require('../db');
+    const { getSunTimes } = require('../services/sunTimes');
+    const user = db.prepare('SELECT latitude, longitude FROM users WHERE id = ?').get(req.userId);
+    const lat = user ? user.latitude : 31.7683; // Default: Jerusalem
+    const lng = user ? user.longitude : 35.2137;
+
+    const times = getSunTimes(new Date(date), lat, lng);
+    return res.json({ sunset: times.sunset, sunrise: times.sunrise, date: date });
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * GET /api/settings/api-key
  * Get the current user's API key (or null if not generated).
  */
@@ -62,7 +84,7 @@ router.get('/', (req, res) => {
  */
 router.put('/', (req, res) => {
   try {
-    const { posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, reminder_enabled, reminder_email } = req.body;
+    const { posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, reminder_enabled, reminder_email, latitude, longitude } = req.body;
 
     // Validate posek if provided
     if (posek !== undefined && posek !== 'rama' && posek !== 'mechaber') {
@@ -78,6 +100,8 @@ router.put('/', (req, res) => {
     if (hachodesh_overflow !== undefined) settingsUpdate.hachodesh_overflow = hachodesh_overflow;
     if (reminder_enabled !== undefined) settingsUpdate.reminder_enabled = reminder_enabled;
     if (reminder_email !== undefined) settingsUpdate.reminder_email = reminder_email;
+    if (latitude !== undefined) settingsUpdate.latitude = latitude;
+    if (longitude !== undefined) settingsUpdate.longitude = longitude;
 
     if (Object.keys(settingsUpdate).length === 0) {
       return res.status(400).json({ error: 'No settings provided' });

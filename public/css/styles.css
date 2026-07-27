@@ -407,6 +407,7 @@ body {
 .cal-marker.marker-haflagah2 { background: #F57C00; }
 .cal-marker.marker-haflagah3 { background: #E65100; }
 .cal-marker.marker-hachodesh { background: #7B1FA2; }
+.cal-marker.marker-reiyah { background: #D32F2F; font-weight: 700; }
 
 /* Or Zarua — slightly transparent with dashed border */
 .cal-marker.marker-az {
@@ -443,6 +444,7 @@ body {
 .dot-haflagah2 { background: #F57C00; }
 .dot-haflagah3 { background: #E65100; }
 .dot-hachodesh { background: #7B1FA2; }
+.dot-reiyah { background: #D32F2F; }
 .dot-az {
   background: linear-gradient(135deg, #E91E63 33%, #FF9800 33%, #FF9800 66%, #7B1FA2 66%);
 }

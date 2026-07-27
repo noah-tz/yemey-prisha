@@ -293,4 +293,12 @@ try {
   db.exec(`ALTER TABLE users ADD COLUMN reset_token_expires TEXT`);
 } catch(e) {}
 
+// Migration: add location columns to users table
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN latitude REAL`);
+} catch(e) {}
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN longitude REAL`);
+} catch(e) {}
+
 module.exports = db;

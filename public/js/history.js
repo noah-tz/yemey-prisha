@@ -57,6 +57,11 @@ var History = (function() {
     document.getElementById('cycle-heb-month').addEventListener('change', updateMainFormDays);
     document.getElementById('cycle-heb-year').addEventListener('change', updateMainFormDays);
 
+    // Sunset display when date fields change
+    document.getElementById('cycle-heb-day').addEventListener('change', updateSunsetDisplay);
+    document.getElementById('cycle-heb-month').addEventListener('change', updateSunsetDisplay);
+    document.getElementById('cycle-heb-year').addEventListener('change', updateSunsetDisplay);
+
     // Import buttons
     document.getElementById('import-add-row-btn').addEventListener('click', function() {
       addImportRow();
@@ -174,6 +179,31 @@ var History = (function() {
     populateDays('cycle-heb-day', maxDay);
   }
 
+  function updateSunsetDisplay() {
+    var day = document.getElementById('cycle-heb-day').value;
+    var month = document.getElementById('cycle-heb-month').value;
+    var year = document.getElementById('cycle-heb-year').value;
+    var sunsetDiv = document.getElementById('sunset-display');
+    var sunsetTime = document.getElementById('sunset-time');
+
+    if (!day || !month || !year) { sunsetDiv.style.display = 'none'; return; }
+
+    var gregDate = HebrewDate.heb2greg(parseInt(year), parseInt(month), parseInt(day));
+    if (!gregDate) { sunsetDiv.style.display = 'none'; return; }
+
+    var dateStr = gregDate.getFullYear() + '-' + String(gregDate.getMonth()+1).padStart(2,'0') + '-' + String(gregDate.getDate()).padStart(2,'0');
+    Api.get('/api/settings/sunset?date=' + dateStr)
+      .then(function(data) {
+        if (data.sunset) {
+          sunsetDiv.style.display = 'block';
+          sunsetTime.textContent = data.sunset;
+        } else {
+          sunsetDiv.style.display = 'none';
+        }
+      })
+      .catch(function() { sunsetDiv.style.display = 'none'; });
+  }
+
   function render() {
     Promise.all([
       Api.get('/api/cycles'),
@@ -189,6 +219,15 @@ var History = (function() {
       mechitzotSet = new Set();
       renderTable();
     });
+
+    // Load and render nekiim
+    Api.get('/api/cycles/nekiim')
+      .then(function(data) {
+        renderNekiim(data.nekiim || []);
+      })
+      .catch(function() {
+        renderNekiim([]);
+      });
   }
 
   function renderTable() {
@@ -265,6 +304,25 @@ var History = (function() {
         return function() { addMechitza(cycleId); };
       })(cycle.id));
       actionsCell.appendChild(mechitzaBtn);
+
+      // Nekiim button
+      var nekiimBtn = document.createElement('button');
+      nekiimBtn.className = 'btn btn-secondary';
+      nekiimBtn.style.fontSize = '0.7rem';
+      nekiimBtn.style.padding = '0.2rem 0.4rem';
+      nekiimBtn.textContent = '7️⃣';
+      nekiimBtn.title = 'התחל שבעה נקיים';
+      nekiimBtn.addEventListener('click', (function(cycleId, cycleStartDate, hebDate) {
+        return function() {
+          var hefsekDate = cycleStartDate;
+          if (confirm('להתחיל ספירת 7 נקיים?\n\nיום ההפסק: ' + HebrewDate.format(hebDate) + '\n(7 הנקיים מתחילים למחרת)')) {
+            Api.post('/api/cycles/' + cycleId + '/nekiim', { startDate: hefsekDate })
+              .then(function() { render(); })
+              .catch(function(err) { alert(err.message); });
+          }
+        };
+      })(cycle.id, cycle.start_date, { year: cycle.start_heb_year, month: cycle.start_heb_month, day: cycle.start_heb_day }));
+      actionsCell.appendChild(nekiimBtn);
 
       row.appendChild(actionsCell);
       tbody.appendChild(row);
@@ -566,6 +624,65 @@ var History = (function() {
     Api.del('/api/mechitzot/' + mechitza.id)
       .then(function() { render(); })
       .catch(function(err) { alert(err.message || 'שגיאה'); });
+  }
+
+  function renderNekiim(nekiimList) {
+    var container = document.getElementById('nekiim-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (nekiimList.length === 0) {
+      container.innerHTML = '<p style="color:var(--color-text-secondary); font-size:0.85rem;">אין ספירות פעילות. לחצי על 7️⃣ ליד וסת להתחיל ספירה.</p>';
+      return;
+    }
+
+    nekiimList.forEach(function(n) {
+      var div = document.createElement('div');
+      div.style.cssText = 'margin-bottom:1rem; padding:0.75rem; border:1px solid var(--color-border); border-radius:8px;';
+
+      var title = document.createElement('p');
+      title.style.fontWeight = '600';
+      var hefsekStr = n.hefsek_heb ? HebrewDate.format(n.hefsek_heb) : n.hefsek_date || n.start_date;
+      var tevilahStr = n.tevilah_heb ? HebrewDate.format(n.tevilah_heb) : '';
+      title.textContent = 'הפסק טהרה: ' + hefsekStr;
+      if (n.completed) title.textContent += ' ✅';
+      div.appendChild(title);
+
+      if (tevilahStr) {
+        var tevilahP = document.createElement('p');
+        tevilahP.style.cssText = 'font-size:0.85rem; color:var(--color-primary); margin-top:0.25rem;';
+        tevilahP.textContent = 'טבילה: ליל ' + tevilahStr;
+        div.appendChild(tevilahP);
+      }
+
+      var daysDiv = document.createElement('div');
+      daysDiv.style.cssText = 'display:flex; gap:0.5rem; margin-top:0.5rem;';
+
+      for (var i = 0; i < 7; i++) {
+        var dayBtn = document.createElement('button');
+        dayBtn.style.cssText = 'width:36px; height:36px; border-radius:50%; border:2px solid; cursor:pointer; font-size:0.8rem;';
+        dayBtn.textContent = (i + 1);
+        if (n.days[i]) {
+          dayBtn.style.background = '#66BB6A';
+          dayBtn.style.borderColor = '#388E3C';
+          dayBtn.style.color = '#fff';
+        } else {
+          dayBtn.style.background = 'var(--color-surface)';
+          dayBtn.style.borderColor = 'var(--color-border)';
+          dayBtn.style.color = 'var(--color-text)';
+        }
+        (function(dayIndex, nekiimId, cycleId) {
+          dayBtn.addEventListener('click', function() {
+            Api.put('/api/cycles/' + cycleId + '/nekiim/' + nekiimId, { day: dayIndex, clean: !n.days[dayIndex] })
+              .then(function() { render(); });
+          });
+        })(i, n.id, n.cycle_id);
+        daysDiv.appendChild(dayBtn);
+      }
+
+      div.appendChild(daysDiv);
+      container.appendChild(div);
+    });
   }
 
   return {

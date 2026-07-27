@@ -103,12 +103,14 @@
         </div>
         <div id="cal-days" class="calendar-grid calendar-days"></div>
         <div class="calendar-legend">
+          <span class="legend-item"><span class="legend-dot dot-reiyah"></span>ראיה</span>
           <span class="legend-item"><span class="legend-dot dot-beinonit"></span>עונה בינונית</span>
           <span class="legend-item"><span class="legend-dot dot-haflagah1"></span>הפלגה 1</span>
           <span class="legend-item"><span class="legend-dot dot-haflagah2"></span>הפלגה 2</span>
           <span class="legend-item"><span class="legend-dot dot-haflagah3"></span>הפלגה 3</span>
           <span class="legend-item"><span class="legend-dot dot-hachodesh"></span>וסת החודש</span>
           <span class="legend-item"><span class="legend-dot dot-az"></span>א״ז (אור זרוע)</span>
+          <span class="legend-item"><span style="font-size:1rem;">⭐</span>וסת קבועה</span>
         </div>
       </div>
     </section>
@@ -160,6 +162,10 @@
                 </select>
               </div>
             </div>
+            <div class="form-group" id="sunset-display" style="display:none;">
+              <label>שקיעה ביום זה</label>
+              <span id="sunset-time" style="font-weight:600; color:var(--color-primary);"></span>
+            </div>
             <div id="cycle-form-error" class="error-message" role="alert"></div>
             <div class="form-actions">
               <button type="submit" class="btn btn-primary" id="cycle-submit-btn">הוסף</button>
@@ -201,6 +207,14 @@
         </div>
         <div style="margin-top: 1.5rem; text-align: center;">
           <button class="btn btn-secondary" id="export-btn">📥 ייצוא נתונים (JSON)</button>
+        </div>
+
+        <div class="card" style="margin-top: 1.5rem;">
+          <h3>שבעה נקיים</h3>
+          <div id="nekiim-section">
+            <p class="settings-description">ספירת שבעה נקיים לאחר הפסק טהרה.</p>
+            <div id="nekiim-list"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -292,6 +306,30 @@
             <div id="reminder-email-message" class="success-message"></div>
           </div>
           <div id="reminder-message" class="success-message"></div>
+        </div>
+
+        <div class="card" style="margin-top: 1.5rem;">
+          <h3>מיקום (לחישוב שקיעה/זריחה)</h3>
+          <p class="settings-description">הזן מיקום לקבלת זמני שקיעה וזריחה מדויקים לאזורך.</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>עיר</label>
+              <select id="setting-city">
+                <option value="">בחר עיר</option>
+                <option value="31.7683,35.2137">ירושלים</option>
+                <option value="32.0853,34.7818">תל אביב</option>
+                <option value="32.7940,34.9896">חיפה</option>
+                <option value="31.2530,34.7915">באר שבע</option>
+                <option value="32.9246,35.0700">צפת</option>
+                <option value="31.6100,34.7700">אשדוד</option>
+                <option value="29.5577,34.9519">אילת</option>
+                <option value="32.3275,34.8519">נתניה</option>
+                <option value="31.8928,34.8113">בית שמש</option>
+                <option value="31.8950,35.2100">מעלה אדומים</option>
+              </select>
+            </div>
+          </div>
+          <div id="location-message" class="success-message"></div>
         </div>
 
         <div class="card" style="margin-top: 1.5rem;">

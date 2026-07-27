@@ -74,7 +74,7 @@ function updatePosek(userId, posek) {
  * @returns {Object} updated user
  */
 function updateSettings(userId, settings) {
-  const allowedFields = ['posek', 'onah_beinonit_31', 'or_zarua', 'haflagah_shlishit', 'hachodesh_overflow', 'reminder_enabled', 'reminder_email'];
+  const allowedFields = ['posek', 'onah_beinonit_31', 'or_zarua', 'haflagah_shlishit', 'hachodesh_overflow', 'reminder_enabled', 'reminder_email', 'latitude', 'longitude'];
   const setClauses = [];
   const values = [];
 
@@ -89,6 +89,9 @@ function updateSettings(userId, settings) {
       } else if (field === 'reminder_email') {
         // String field — store as-is (empty string becomes null)
         val = val || null;
+      } else if (field === 'latitude' || field === 'longitude') {
+        // Numeric float fields
+        val = val !== null && val !== undefined ? parseFloat(val) : null;
       } else {
         // Boolean fields stored as INTEGER 0/1
         val = val ? 1 : 0;

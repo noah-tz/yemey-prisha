@@ -113,6 +113,22 @@ var Settings = (function() {
           setTimeout(function() { msgEl.textContent = ''; msgEl.className = 'success-message'; }, 3000);
         });
     });
+
+    // City/location selection
+    var citySelect = document.getElementById('setting-city');
+    if (citySelect) {
+      citySelect.addEventListener('change', function() {
+        var val = this.value;
+        if (!val) return;
+        var parts = val.split(',');
+        Api.put('/api/settings', { latitude: parseFloat(parts[0]), longitude: parseFloat(parts[1]) })
+          .then(function() {
+            var msgEl = document.getElementById('location-message');
+            msgEl.textContent = 'מיקום נשמר ✓';
+            setTimeout(function() { msgEl.textContent = ''; }, 3000);
+          });
+      });
+    }
   }
 
   function loadApiKey() {

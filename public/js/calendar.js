@@ -120,17 +120,19 @@ var Calendar = (function() {
 
     Api.get('/api/vestot/calendar?from=' + from + '&to=' + to)
       .then(function(data) {
+        var vestotArray = (data && data.vestot) ? data.vestot : [];
+        var cyclesArray = (data && data.cycles) ? data.cycles : [];
         if (calendarMode === 'hebrew') {
-          renderHebrewGrid((data && data.vestot) ? data.vestot : []);
+          renderHebrewGrid(vestotArray, cyclesArray);
         } else {
-          renderGrid((data && data.vestot) ? data.vestot : []);
+          renderGrid(vestotArray, cyclesArray);
         }
       })
       .catch(function() {
         if (calendarMode === 'hebrew') {
-          renderHebrewGrid([]);
+          renderHebrewGrid([], []);
         } else {
-          renderGrid([]);
+          renderGrid([], []);
         }
       });
   }
@@ -175,7 +177,9 @@ var Calendar = (function() {
     var type = v.type || '';
     var base = VESET_LABELS[type] || type;
     var isAZ = v.is_or_zarua || v.isOrZarua;
-    return isAZ ? ('א״ז ' + base) : base;
+    var label = isAZ ? ('א״ז ' + base) : base;
+    if (v.is_kavua || v.isKavua) label += ' ⭐';
+    return label;
   }
 
   function sortVestot(list) {
@@ -194,7 +198,7 @@ var Calendar = (function() {
     });
   }
 
-  function renderHebrewGrid(vestotData) {
+  function renderHebrewGrid(vestotData, cyclesArray) {
     var container = document.getElementById('cal-days');
     container.innerHTML = '';
 
@@ -211,6 +215,15 @@ var Calendar = (function() {
       if (!map[v.date]) map[v.date] = [];
       map[v.date].push(v);
     });
+
+    // Build cycles map (re'iyot)
+    var cyclesMap = {};
+    if (cyclesArray) {
+      cyclesArray.forEach(function(c) {
+        if (!cyclesMap[c.date]) cyclesMap[c.date] = [];
+        cyclesMap[c.date].push(c);
+      });
+    }
 
     // Empty cells before first day of Hebrew month
     for (var i = 0; i < firstDayOfWeek; i++) {
@@ -239,24 +252,40 @@ var Calendar = (function() {
       gregEl.textContent = gregDate.getDate() + '/' + (gregDate.getMonth() + 1);
       cell.appendChild(gregEl);
 
-      // Veset markers
-      if (map[dateStr]) {
-        var sorted = sortVestot(map[dateStr]);
+      // Markers container
+      var hasMarkers = (map[dateStr] || cyclesMap[dateStr]);
+      if (hasMarkers) {
         var markers = document.createElement('div');
         markers.className = 'cal-markers';
 
-        sorted.forEach(function(v) {
-          var marker = document.createElement('span');
-          var type = v.type || '';
-          var isAZ = v.is_or_zarua || v.isOrZarua;
-          var cls = 'cal-marker ' + getMarkerClass(type);
-          if (isAZ) cls += ' marker-az';
-          marker.className = cls;
+        // Re'iyah markers (cycle start dates)
+        if (cyclesMap[dateStr]) {
+          cyclesMap[dateStr].forEach(function(c) {
+            var marker = document.createElement('span');
+            marker.className = 'cal-marker marker-reiyah';
+            var icon = c.onah === 'night' ? '🌙' : '☀️';
+            marker.textContent = icon + ' ראיה';
+            markers.appendChild(marker);
+          });
+        }
 
-          var icon = v.onah === 'night' ? '🌙' : '☀️';
-          marker.textContent = icon + ' ' + getLabel(v);
-          markers.appendChild(marker);
-        });
+        // Veset markers
+        if (map[dateStr]) {
+          var sorted = sortVestot(map[dateStr]);
+          sorted.forEach(function(v) {
+            var marker = document.createElement('span');
+            var type = v.type || '';
+            var isAZ = v.is_or_zarua || v.isOrZarua;
+            var cls = 'cal-marker ' + getMarkerClass(type);
+            if (isAZ) cls += ' marker-az';
+            marker.className = cls;
+
+            var icon = v.onah === 'night' ? '🌙' : '☀️';
+            marker.textContent = icon + ' ' + getLabel(v);
+
+            markers.appendChild(marker);
+          });
+        }
 
         cell.appendChild(markers);
       }
@@ -265,7 +294,7 @@ var Calendar = (function() {
     }
   }
 
-  function renderGrid(vestotData) {
+  function renderGrid(vestotData, cyclesArray) {
     var container = document.getElementById('cal-days');
     container.innerHTML = '';
 
@@ -280,6 +309,15 @@ var Calendar = (function() {
       if (!map[v.date]) map[v.date] = [];
       map[v.date].push(v);
     });
+
+    // Build cycles map (re'iyot)
+    var cyclesMap = {};
+    if (cyclesArray) {
+      cyclesArray.forEach(function(c) {
+        if (!cyclesMap[c.date]) cyclesMap[c.date] = [];
+        cyclesMap[c.date].push(c);
+      });
+    }
 
     // Empty cells
     for (var i = 0; i < firstDay; i++) {
@@ -309,24 +347,40 @@ var Calendar = (function() {
       hebEl.textContent = HebrewDate.formatShort(hebDate);
       cell.appendChild(hebEl);
 
-      // Veset markers
-      if (map[dateStr]) {
-        var sorted = sortVestot(map[dateStr]);
+      // Markers container
+      var hasMarkers = (map[dateStr] || cyclesMap[dateStr]);
+      if (hasMarkers) {
         var markers = document.createElement('div');
         markers.className = 'cal-markers';
 
-        sorted.forEach(function(v) {
-          var marker = document.createElement('span');
-          var type = v.type || '';
-          var isAZ = v.is_or_zarua || v.isOrZarua;
-          var cls = 'cal-marker ' + getMarkerClass(type);
-          if (isAZ) cls += ' marker-az';
-          marker.className = cls;
+        // Re'iyah markers (cycle start dates)
+        if (cyclesMap[dateStr]) {
+          cyclesMap[dateStr].forEach(function(c) {
+            var marker = document.createElement('span');
+            marker.className = 'cal-marker marker-reiyah';
+            var icon = c.onah === 'night' ? '🌙' : '☀️';
+            marker.textContent = icon + ' ראיה';
+            markers.appendChild(marker);
+          });
+        }
 
-          var icon = v.onah === 'night' ? '🌙' : '☀️';
-          marker.textContent = icon + ' ' + getLabel(v);
-          markers.appendChild(marker);
-        });
+        // Veset markers
+        if (map[dateStr]) {
+          var sorted = sortVestot(map[dateStr]);
+          sorted.forEach(function(v) {
+            var marker = document.createElement('span');
+            var type = v.type || '';
+            var isAZ = v.is_or_zarua || v.isOrZarua;
+            var cls = 'cal-marker ' + getMarkerClass(type);
+            if (isAZ) cls += ' marker-az';
+            marker.className = cls;
+
+            var icon = v.onah === 'night' ? '🌙' : '☀️';
+            marker.textContent = icon + ' ' + getLabel(v);
+
+            markers.appendChild(marker);
+          });
+        }
 
         cell.appendChild(markers);
       }
