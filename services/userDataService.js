@@ -17,7 +17,10 @@ function loadUserData(userId, encKey) {
   }
   try {
     const json = cryptoService.decrypt(row.encrypted_blob, encKey);
-    return JSON.parse(json);
+    const data = JSON.parse(json);
+    // Remove padding field if present
+    delete data._pad;
+    return data;
   } catch (e) {
     // Decryption failed — return empty
     return { cycles: [], vestot: [], mechitzot: [], next_cycle_id: 1, next_veset_id: 1 };
@@ -32,7 +35,15 @@ function loadUserData(userId, encKey) {
  */
 function saveUserData(userId, data, encKey) {
   const json = JSON.stringify(data);
-  const encrypted = cryptoService.encrypt(json, encKey);
+
+  // Pad to minimum size (equivalent to ~20 cycles worth of data)
+  // This prevents blob size from revealing how much data a user has
+  const MIN_BLOB_SIZE = 50000; // 50KB minimum
+  const padded = json.length >= MIN_BLOB_SIZE
+    ? json
+    : json.slice(0, -1) + ',"_pad":"' + 'x'.repeat(MIN_BLOB_SIZE - json.length) + '"}';
+
+  const encrypted = cryptoService.encrypt(padded, encKey);
 
   const existing = db.prepare('SELECT user_id FROM user_data WHERE user_id = ?').get(userId);
   if (existing) {
