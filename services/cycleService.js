@@ -102,7 +102,7 @@ function getHistory(userId, encKey) {
   const data = loadUserData(userId, encKey);
   const sorted = [...data.cycles].sort((a, b) => a.start_rd - b.start_rd);
   return sorted.map((record, index) => {
-    const interval = index > 0 ? record.start_rd - sorted[index - 1].start_rd : null;
+    const interval = index > 0 ? record.start_rd - sorted[index - 1].start_rd + 1 : null;
     return { ...record, intervalFromPrevious: interval };
   });
 }
@@ -246,7 +246,7 @@ function toISODate(date) {
 function enrichWithInterval(record, cycles) {
   const sorted = [...cycles].sort((a, b) => a.start_rd - b.start_rd);
   const idx = sorted.findIndex(r => r.id === record.id);
-  const interval = idx > 0 ? sorted[idx].start_rd - sorted[idx - 1].start_rd : null;
+  const interval = idx > 0 ? sorted[idx].start_rd - sorted[idx - 1].start_rd + 1 : null;
   return { ...record, intervalFromPrevious: interval };
 }
 
