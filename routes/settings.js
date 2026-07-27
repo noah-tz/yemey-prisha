@@ -110,4 +110,61 @@ router.put('/', (req, res) => {
   }
 });
 
+/**
+ * POST /api/settings/enable-extended
+ * Enable extended mode (save enc_key_encrypted for API/reminders).
+ * Requires active session with encKey.
+ */
+router.post('/enable-extended', (req, res) => {
+  try {
+    if (!req.encKey) {
+      return res.status(400).json({ error: 'יש להתחבר מחדש כדי להפעיל גישה מורחבת' });
+    }
+    const cryptoService = require('../services/crypto');
+    const db = require('../db');
+    const encKeyEncrypted = cryptoService.wrapKeyForStorage(req.encKey);
+    db.prepare('UPDATE users SET enc_key_encrypted = ? WHERE id = ?').run(encKeyEncrypted, req.userId);
+    
+    // Log consent for this action
+    db.prepare(
+      'INSERT INTO consent_log (user_id, terms_version, ip_address, user_agent) VALUES (?, ?, ?, ?)'
+    ).run(req.userId, 'extended-mode-1.0', req.ip || '', req.headers['user-agent'] || '');
+    
+    return res.json({ message: 'גישה מורחבת הופעלה', mode: 'extended' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/settings/disable-extended
+ * Disable extended mode (delete enc_key_encrypted, return to E2E).
+ */
+router.post('/disable-extended', (req, res) => {
+  try {
+    const db = require('../db');
+    db.prepare('UPDATE users SET enc_key_encrypted = NULL WHERE id = ?').run(req.userId);
+    // Also disable reminders since they won't work without extended mode
+    db.prepare('UPDATE users SET reminder_enabled = 0 WHERE id = ?').run(req.userId);
+    return res.json({ message: 'חזרה למצב הצפנה E2E', mode: 'e2e' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/settings/encryption-mode
+ * Check current encryption mode.
+ */
+router.get('/encryption-mode', (req, res) => {
+  try {
+    const db = require('../db');
+    const user = db.prepare('SELECT enc_key_encrypted FROM users WHERE id = ?').get(req.userId);
+    const mode = user && user.enc_key_encrypted ? 'extended' : 'e2e';
+    return res.json({ mode });
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

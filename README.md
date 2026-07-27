@@ -46,12 +46,12 @@
 <tr>
 <td width="50%">
 
-### 🔒 Server-Side Encryption
-- AES-256-GCM field-level encryption
+### 🔒 Dual Encryption Modes
+- **E2E by default** — only password can decrypt
+- Extended mode (opt-in) for API + reminders
+- AES-256-GCM with PBKDF2 key derivation
 - Single encrypted blob per user
-- Data encrypted at rest in database
-- Key derived from password (PBKDF2)
-- No plaintext dates, counts, or patterns stored
+- Blob padding prevents size-based leakage
 
 </td>
 <td width="50%">
@@ -120,6 +120,17 @@ graph TB
 | **At Rest** | AES-256-GCM encrypted blob — no plaintext dates, counts, or patterns in database |
 | **Passwords** | bcrypt (12 rounds) |
 | **Session** | httpOnly cookie, SQLite-backed |
+
+### Two Encryption Modes
+
+| Mode | Default? | API/MCP | Reminders | Who can decrypt |
+|------|:--------:|:-------:|:---------:|----------------|
+| **🔒 E2E** | ✅ Yes | ❌ Blocked | ❌ Disabled | Only the user (password-derived key in session) |
+| **🔔 Extended** | ❌ Opt-in | ✅ Works | ✅ Works | User + server (for automated processing) |
+
+- **New users start in E2E mode** — the encryption key exists only in the user's session. No API, no MCP, no reminders. Maximum privacy.
+- **Extended mode** requires explicit user consent (logged with IP + timestamp). It stores a wrapped copy of the encryption key on the server, enabling automated features.
+- **Users can switch back to E2E at any time** — this deletes the server-side key copy and disables API/reminders immediately.
 
 ### What the server admin sees in the database:
 ```sql

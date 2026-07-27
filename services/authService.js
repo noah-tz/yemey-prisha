@@ -28,10 +28,11 @@ function register(email, password) {
   // Generate encryption salt and derive key
   const encSalt = cryptoService.generateSalt();
   const encKey = cryptoService.deriveKey(password, encSalt);
-  const encKeyEncrypted = cryptoService.wrapKeyForStorage(encKey);
+  // E2E mode by default: do NOT store enc_key_encrypted on registration
+  // User must explicitly enable extended mode for API/reminders to work
 
   try {
-    const user = userRepository.create(email, hash, encSalt, encKeyEncrypted);
+    const user = userRepository.create(email, hash, encSalt, null);
     return { ...user, encKey: encKey.toString('hex') };
   } catch (err) {
     if (err.message && err.message.includes('UNIQUE constraint failed')) {
@@ -67,18 +68,14 @@ function login(email, password) {
   if (user.enc_salt) {
     const encKey = cryptoService.deriveKey(password, user.enc_salt);
     encKeyHex = encKey.toString('hex');
-
-    // If enc_key_encrypted is missing (legacy user migrating), store it now
-    if (!user.enc_key_encrypted) {
-      const encKeyEncrypted = cryptoService.wrapKeyForStorage(encKey);
-      userRepository.updateEncryption(user.id, user.enc_salt, encKeyEncrypted);
-    }
+    // Don't auto-store enc_key_encrypted on login anymore.
+    // It's only stored when user explicitly enables extended mode.
   } else {
     // Legacy user without encryption — generate salt and key now
     const encSalt = cryptoService.generateSalt();
     const encKey = cryptoService.deriveKey(password, encSalt);
-    const encKeyEncrypted = cryptoService.wrapKeyForStorage(encKey);
-    userRepository.updateEncryption(user.id, encSalt, encKeyEncrypted);
+    // Only store enc_salt, not enc_key_encrypted (E2E by default)
+    userRepository.updateEncryption(user.id, encSalt, null);
     encKeyHex = encKey.toString('hex');
   }
 

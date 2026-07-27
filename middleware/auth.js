@@ -44,7 +44,10 @@ function requireAuth(req, res, next) {
           req.encKey = null;
         }
       } else {
-        req.encKey = null;
+        // E2E mode — API key cannot decrypt
+        return res.status(403).json({ 
+          error: 'גישת API אינה זמינה במצב הצפנה E2E. יש להפעיל "גישה מורחבת" בהגדרות.' 
+        });
       }
       return next();
     }

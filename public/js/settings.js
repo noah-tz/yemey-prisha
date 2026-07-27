@@ -159,6 +159,8 @@ var Settings = (function() {
     loadApiKey();
     // Load reminder emails list
     loadReminderEmails();
+    // Load encryption mode
+    loadEncryptionMode();
 
     Api.get('/api/settings')
       .then(function(data) {
@@ -304,6 +306,91 @@ var Settings = (function() {
         });
       })
       .catch(function() {});
+  }
+
+  function loadEncryptionMode() {
+    Api.get('/api/settings/encryption-mode')
+      .then(function(data) {
+        var statusEl = document.getElementById('encryption-mode-status');
+        var descEl = document.getElementById('encryption-mode-desc');
+        var actionsEl = document.getElementById('encryption-mode-actions');
+        
+        if (data.mode === 'e2e') {
+          statusEl.textContent = '\uD83D\uDD12 מצב E2E (הצפנה מקצה לקצה)';
+          statusEl.style.color = '#388E3C';
+          descEl.textContent = 'הנתונים מוצפנים באופן מוחלט. רק סיסמתך יכולה לפענח אותם. תזכורות באימייל, API ו-MCP אינם זמינים במצב זה.';
+          actionsEl.innerHTML = '<button class="btn btn-primary" id="enable-extended-btn">הפעל גישה מורחבת (API + תזכורות)</button>';
+          
+          document.getElementById('enable-extended-btn').addEventListener('click', function() {
+            showExtendedModeConfirm();
+          });
+
+          // Dim/disable API and reminder sections in E2E mode
+          var apiKeyCard = document.getElementById('api-key-display') ? document.getElementById('api-key-display').closest('.card') : null;
+          var reminderCard = document.getElementById('reminder-emails-section') ? document.getElementById('reminder-emails-section').closest('.card') : null;
+          if (apiKeyCard) apiKeyCard.style.display = 'none';
+          if (reminderCard) reminderCard.style.display = 'none';
+        } else {
+          statusEl.textContent = '\uD83D\uDD14 מצב מורחב (API + תזכורות)';
+          statusEl.style.color = '#1976D2';
+          descEl.textContent = 'תזכורות באימייל, API ו-MCP פעילים. המערכת מסוגלת לעבד את הנתונים באופן אוטומטי.';
+          actionsEl.innerHTML = '<button class="btn btn-secondary" id="disable-extended-btn">חזרה למצב E2E (ביטול גישה מורחבת)</button>';
+          
+          document.getElementById('disable-extended-btn').addEventListener('click', function() {
+            if (confirm('חזרה למצב E2E תבטל תזכורות באימייל וגישת API. להמשיך?')) {
+              Api.post('/api/settings/disable-extended', {})
+                .then(function() { loadEncryptionMode(); render(); })
+                .catch(function(err) { alert(err.message); });
+            }
+          });
+
+          // Restore opacity for API and reminder sections in extended mode
+          var apiKeyCard = document.getElementById('api-key-display') ? document.getElementById('api-key-display').closest('.card') : null;
+          var reminderCard = document.getElementById('reminder-emails-section') ? document.getElementById('reminder-emails-section').closest('.card') : null;
+          if (apiKeyCard) apiKeyCard.style.display = 'block';
+          if (reminderCard) reminderCard.style.display = 'block';
+        }
+      })
+      .catch(function() {});
+  }
+
+  function showExtendedModeConfirm() {
+    var overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.innerHTML = 
+      '<div class="confirm-dialog" style="max-width:450px; text-align:right;">' +
+      '<h3 style="margin-bottom:1rem; color:#1976D2;">שינוי מצב הצפנה</h3>' +
+      '<p style="line-height:1.7; font-size:0.9rem;">הנתונים שלך מוצפנים כעת בשיטת הצפנה מקצה לקצה (E2E) — המערכת אינה יכולה לגשת אליהם ללא סיסמתך.</p>' +
+      '<p style="line-height:1.7; font-size:0.9rem; margin-top:0.75rem;">הפעלת תזכורות ו/או גישת API דורשת מעבר לשיטת הצפנה שבה המערכת מסוגלת לעבד את הנתונים באופן אוטומטי. האימייל אינו נשמר במערכת ושום אדם אינו רואה אותו מלבדך.</p>' +
+      '<p style="line-height:1.7; font-size:0.85rem; margin-top:0.75rem;">המערכת אינה נושאת באחריות למקרה של פגיעה בסודיות הנתונים בשל הפעלת שירות זה.</p>' +
+      '<p style="line-height:1.7; font-size:0.85rem; margin-top:0.5rem; color:#666;">ניתן לבטל בכל עת — ביטול מחזיר את ההצפנה למצב E2E.</p>' +
+      '<div style="margin-top:1.5rem; display:flex; gap:0.75rem; justify-content:center;">' +
+      '<button class="btn btn-primary" id="confirm-extended-yes">אני מאשר/ת</button>' +
+      '<button class="btn btn-secondary" id="confirm-extended-no">ביטול</button>' +
+      '</div></div>';
+    
+    document.body.appendChild(overlay);
+    
+    document.getElementById('confirm-extended-yes').addEventListener('click', function() {
+      document.body.removeChild(overlay);
+      Api.post('/api/settings/enable-extended', {})
+        .then(function() {
+          var msgEl = document.getElementById('encryption-mode-message');
+          msgEl.textContent = 'גישה מורחבת הופעלה \u2713';
+          setTimeout(function() { msgEl.textContent = ''; }, 3000);
+          loadEncryptionMode();
+          render();
+        })
+        .catch(function(err) { alert(err.message || 'שגיאה'); });
+    });
+    
+    document.getElementById('confirm-extended-no').addEventListener('click', function() {
+      document.body.removeChild(overlay);
+    });
+    
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) document.body.removeChild(overlay);
+    });
   }
 
   return {
