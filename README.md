@@ -39,6 +39,7 @@
 - **Veset Hachodesh** (Hebrew month-day)
 - **Or Zarua** (opposite onah)
 - **Mechitza** (partition/reset)
+- **7 Nekiim** (14-check grid, calendar integration, tevilah marker)
 - Configurable: Rama vs Mechaber
 
 </td>
@@ -148,10 +149,11 @@ SELECT * FROM user_data;
 | Feature | Description |
 |---------|-------------|
 | 🌗 Hebrew Calendar Mode | Proper Hebrew month grid (א׳ אב → ל׳ אב) with Gregorian secondary |
-| 📊 Color-Coded Markers | Pink=Beinonit, Orange=Haflagah(1/2/3), Purple=Hachodesh |
+| 📊 Color-Coded Markers | Pink=Beinonit, Orange=Haflagah(1/2/3), Purple=Hachodesh, Green=Nekiim, Teal=Tevilah |
+| 7️⃣ Shiva Nekiim | 14-checkbox grid (night+day × 7), Hebrew date per day, calendar markers, tevilah night indicator |
 | ✂️ Mechitza (Partition) | Visual dividers in history that reset haflagah counting |
 | 🔑 API Key Management | Reveal/hide/copy with confirmation |
-| 📧 Email Reminders | Daily at 16:00, multiple verified recipients |
+| 📧 Email Reminders | Daily prisha reminders + twice-daily nekiim reminders (before sunset & morning) |
 | 📋 Hebrew Date Input | Gematria dropdowns (א׳–ל׳), year-dependent day counts |
 
 ---
