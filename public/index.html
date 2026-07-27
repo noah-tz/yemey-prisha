@@ -8,6 +8,9 @@
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#1976D2">
   <link rel="stylesheet" href="/css/styles.css">
+  <script>
+    (function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
+  </script>
 </head>
 <body>
   <nav id="main-nav" class="nav-bar" style="display:none;">
@@ -16,6 +19,7 @@
       <a href="#calendar" class="nav-link" data-view="calendar">לוח</a>
       <a href="#history" class="nav-link" data-view="history">היסטוריה</a>
       <a href="#settings" class="nav-link" data-view="settings">הגדרות</a>
+      <button id="theme-toggle" class="nav-link" style="border:none; cursor:pointer; background:none; font-size:1.1rem;" title="מצב כהה/בהיר">🌙</button>
       <a href="#" id="logout-btn" class="nav-link nav-logout">יציאה</a>
     </div>
   </nav>

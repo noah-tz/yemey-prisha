@@ -28,6 +28,6 @@ EXPOSE 3000
 
 # Health check (using node to avoid wget temp file issues with read-only fs)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "const http=require('http');const r=http.get('http://localhost:3000/api/docs',res=>{process.exit(res.statusCode===200?0:1)});r.on('error',()=>process.exit(1));r.setTimeout(4000,()=>process.exit(1))"
+  CMD node -e "const http=require('http');const r=http.get('http://localhost:3000/health',res=>{process.exit(res.statusCode===200?0:1)});r.on('error',()=>process.exit(1));r.setTimeout(4000,()=>process.exit(1))"
 
 CMD ["node", "server.js"]

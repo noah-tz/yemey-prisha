@@ -63,6 +63,23 @@ app.use('/api/mechitzot', require('./routes/mechitzot'));
 app.use('/api/reminder-emails', require('./routes/reminderEmails'));
 app.use('/api/docs', require('./routes/api-docs'));
 
+// Health check endpoint (public, no auth)
+app.get('/health', (req, res) => {
+  try {
+    const db = require('./db');
+    // Quick DB check
+    db.prepare('SELECT 1').get();
+    res.json({
+      status: 'ok',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      memory: Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB'
+    });
+  } catch (err) {
+    res.status(503).json({ status: 'error', error: err.message });
+  }
+});
+
 // Fallback: serve index.html for SPA routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
