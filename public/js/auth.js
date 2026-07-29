@@ -52,7 +52,7 @@ var Auth = (function() {
       if (!email) { document.getElementById('login-error').textContent = I18n.t('error_enter_email'); return; }
       fetch('/api/auth/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:email}) })
         .then(function(r) { return r.json(); })
-        .then(function(d) { document.getElementById('login-error').textContent = ''; document.getElementById('login-error').style.color='#388E3C'; document.getElementById('login-error').textContent = d.message || I18n.t('msg_reset_sent'); });
+        .then(function(d) { document.getElementById('login-error').textContent = ''; document.getElementById('login-error').style.color='#388E3C'; document.getElementById('login-error').textContent = I18n.t('msg_reset_sent'); });
     });
 
     registerForm.addEventListener('submit', function(e) {

@@ -33,30 +33,41 @@ router.post('/', requireAuth, async (req, res) => {
 
     const record = reminderEmailRepo.addEmail(req.userId, email);
 
+    // Get user lang preference
+    const db = require('../db');
+    const userRow = db.prepare('SELECT lang FROM users WHERE id = ?').get(req.userId);
+    const lang = (userRow && userRow.lang) || 'he';
+
     // Send verification email
     const verifyUrl = `https://veset.dina-ins.co.il/api/reminder-emails/verify/${record.verify_token}`;
+    const dir = lang === 'en' ? 'ltr' : 'rtl';
+    const subject = lang === 'en' ? 'Verify Email — Luach Vestot' : 'אימות כתובת מייל — לוח וסתות';
+    const title = lang === 'en' ? 'Email Verification' : 'אימות כתובת מייל';
+    const greeting = lang === 'en' ? 'Hello,' : 'שלום,';
+    const body1 = lang === 'en' ? 'A request was made to send you separation day reminders from Luach Vestot.' : 'נשלחה בקשה לשלוח אליך תזכורות ימי פרישה מלוח וסתות.';
+    const btnText = lang === 'en' ? 'Verify Email' : 'אשר כתובת מייל';
+    const validity = lang === 'en' ? 'This link is valid for 24 hours.' : 'הקישור תקף ל-24 שעות.';
+    const tip = lang === 'en' ? '💡 <strong>Tip:</strong> Move this email to your Primary folder so future reminders don\'t go to spam.' : '💡 <strong>טיפ:</strong> כדאי להעביר מייל זה לתיקיית "ראשי" (Primary) כדי שתזכורות עתידיות לא ייפלו לספאם.';
+    const ignore = lang === 'en' ? 'If you did not request this — ignore this message.' : 'אם לא ביקשת זאת — התעלם מהודעה זו.';
+
     const html = `
-      <div dir="rtl" style="font-family: Arial, 'Noto Sans Hebrew', sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #1976D2; text-align: center;">אימות כתובת מייל</h2>
-        <p>שלום,</p>
-        <p>נשלחה בקשה לשלוח אליך תזכורות ימי פרישה מלוח וסתות.</p>
+      <div dir="${dir}" style="font-family: Arial, 'Noto Sans Hebrew', sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #1976D2; text-align: center;">${title}</h2>
+        <p>${greeting}</p>
+        <p>${body1}</p>
         <p style="text-align: center; margin: 30px 0;">
-          <a href="${verifyUrl}" style="background: #1976D2; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-size: 16px;">אשר כתובת מייל</a>
+          <a href="${verifyUrl}" style="background: #1976D2; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-size: 16px;">${btnText}</a>
         </p>
-        <p style="color: #666; font-size: 13px;">הקישור תקף ל-24 שעות.</p>
+        <p style="color: #666; font-size: 13px;">${validity}</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-        <p style="font-size: 12px; color: #999;">
-          \u{1F4A1} <strong>טיפ:</strong> כדאי להעביר מייל זה לתיקיית "ראשי" (Primary) כדי שתזכורות עתידיות לא ייפלו לספאם.
-        </p>
-        <p style="font-size: 11px; color: #bbb; text-align: center;">
-          אם לא ביקשת זאת — התעלם מהודעה זו.
-        </p>
+        <p style="font-size: 12px; color: #999;">${tip}</p>
+        <p style="font-size: 11px; color: #bbb; text-align: center;">${ignore}</p>
       </div>
     `;
 
-    await sendReminder(email, 'אימות כתובת מייל — לוח וסתות', html);
+    await sendReminder(email, subject, html);
 
-    return res.status(200).json({ message: 'מייל אימות נשלח' });
+    return res.status(200).json({ message: 'verify_sent' });
   } catch (err) {
     if (err.message === 'כתובת זו כבר מאומתת') {
       return res.status(409).json({ error: err.message });

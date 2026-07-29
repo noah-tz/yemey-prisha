@@ -111,10 +111,10 @@ router.post('/forgot-password', async (req, res) => {
 
     const db = require('../db');
     const crypto = require('crypto');
-    const user = db.prepare('SELECT id, enc_key_encrypted FROM users WHERE email = ?').get(email);
+    const user = db.prepare('SELECT id, enc_key_encrypted, lang FROM users WHERE email = ?').get(email);
     
     // Always return success (don't reveal if email exists)
-    if (!user) return res.json({ message: 'אם הכתובת קיימת במערכת, נשלח אליה קישור לאיפוס' });
+    if (!user) return res.json({ message: 'reset_sent' });
 
     const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
@@ -123,28 +123,39 @@ router.post('/forgot-password', async (req, res) => {
 
     const { sendReminder } = require('../services/emailService');
     const isE2E = !user.enc_key_encrypted;
+    const userLang = user.lang || 'he';
     const resetUrl = `https://veset.dina-ins.co.il/reset-password.html?token=${token}`;
     
     let warningHtml = '';
     if (isE2E) {
-      warningHtml = '<div style="background:#FFF3E0; padding:1rem; border-radius:8px; margin:1rem 0; border-right:4px solid #FF9800;"><strong>שים לב:</strong> הנתונים שלך מוצפנים עם הסיסמה הנוכחית. איפוס הסיסמה <strong>ימחק את כל הנתונים</strong> (ראיות, ימי פרישה). לא ניתן לשחזר.</div>';
+      warningHtml = userLang === 'en'
+        ? '<div style="background:#FFF3E0; padding:1rem; border-radius:8px; margin:1rem 0; border-left:4px solid #FF9800;"><strong>Warning:</strong> Your data is encrypted with your current password. Resetting the password <strong>will delete all data</strong> (sightings, separation days). This cannot be undone.</div>'
+        : '<div style="background:#FFF3E0; padding:1rem; border-radius:8px; margin:1rem 0; border-right:4px solid #FF9800;"><strong>שים לב:</strong> הנתונים שלך מוצפנים עם הסיסמה הנוכחית. איפוס הסיסמה <strong>ימחק את כל הנתונים</strong> (ראיות, ימי פרישה). לא ניתן לשחזר.</div>';
     }
 
+    const dir = userLang === 'en' ? 'ltr' : 'rtl';
+    const subject = userLang === 'en' ? 'Password Reset — Luach Vestot' : 'איפוס סיסמה — לוח וסתות';
+    const title = userLang === 'en' ? 'Password Reset' : 'איפוס סיסמה';
+    const body1 = userLang === 'en' ? 'A password reset was requested for your Luach Vestot account.' : 'התקבלה בקשה לאיפוס הסיסמה שלך בלוח וסתות.';
+    const btnText = userLang === 'en' ? 'Reset Password' : 'איפוס סיסמה';
+    const validity = userLang === 'en' ? 'This link is valid for one hour.' : 'הקישור תקף לשעה אחת.';
+    const ignore = userLang === 'en' ? 'If you did not request this — ignore this message.' : 'אם לא ביקשת — התעלם מהודעה זו.';
+
     const html = `
-      <div dir="rtl" style="font-family:Arial,'Noto Sans Hebrew',sans-serif; max-width:500px; margin:0 auto; padding:20px;">
-        <h2 style="color:#1976D2; text-align:center;">איפוס סיסמה</h2>
-        <p>התקבלה בקשה לאיפוס הסיסמה שלך בלוח וסתות.</p>
+      <div dir="${dir}" style="font-family:Arial,'Noto Sans Hebrew',sans-serif; max-width:500px; margin:0 auto; padding:20px;">
+        <h2 style="color:#1976D2; text-align:center;">${title}</h2>
+        <p>${body1}</p>
         ${warningHtml}
         <p style="text-align:center; margin:30px 0;">
-          <a href="${resetUrl}" style="background:#1976D2; color:white; padding:12px 30px; border-radius:8px; text-decoration:none; font-size:16px;">איפוס סיסמה</a>
+          <a href="${resetUrl}" style="background:#1976D2; color:white; padding:12px 30px; border-radius:8px; text-decoration:none; font-size:16px;">${btnText}</a>
         </p>
-        <p style="color:#666; font-size:13px;">הקישור תקף לשעה אחת.</p>
-        <p style="font-size:11px; color:#bbb;">אם לא ביקשת — התעלם מהודעה זו.</p>
+        <p style="color:#666; font-size:13px;">${validity}</p>
+        <p style="font-size:11px; color:#bbb;">${ignore}</p>
       </div>
     `;
 
-    await sendReminder(email, 'איפוס סיסמה — לוח וסתות', html);
-    return res.json({ message: 'אם הכתובת קיימת במערכת, נשלח אליה קישור לאיפוס' });
+    await sendReminder(email, subject, html);
+    return res.json({ message: 'reset_sent' });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });
   }
