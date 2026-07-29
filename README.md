@@ -29,6 +29,7 @@
 - Toggle between Hebrew/Gregorian views
 - Year-dependent month lengths (Cheshvan/Kislev)
 - Gematria day names & Hebrew year display
+- Hebrew datepicker component (mini calendar popup)
 
 </td>
 <td width="50%">
@@ -38,7 +39,7 @@
 - **Veset Haflagah** (1st, 2nd, 3rd)
 - **Veset Hachodesh** (Hebrew month-day)
 - **Or Zarua** (opposite onah)
-- **Mechitza** (partition/reset)
+- **Mechitza** (partition/reset — nullifies interval)
 - **7 Nekiim** (14-check grid, calendar integration, tevilah marker)
 - Configurable: Rama vs Mechaber
 
@@ -51,18 +52,18 @@
 - **E2E by default** — only password can decrypt
 - Extended mode (opt-in) for API + reminders
 - AES-256-GCM with PBKDF2 key derivation
-- Single encrypted blob per user
+- Single encrypted blob per user (padded to 50KB)
 - Blob padding prevents size-based leakage
 
 </td>
 <td width="50%">
 
-### 🤖 AI Integration (MCP)
-- Full MCP server for AI assistants
-- 10 tools: CRUD cycles, vestot, settings
-- Bulk import with Hebrew date support
-- API key authentication
-- Works with Kiro, Claude, etc.
+### 🌐 Multi-Language & Admin
+- **Hebrew** (RTL) and **English** (LTR) — full i18n
+- Language toggle on login page (pre-auth)
+- Direction auto-switches per language
+- **Admin panel** — user management, stats, registration toggle
+- Role-based access (owner → admin → user)
 
 </td>
 </tr>
@@ -152,9 +153,12 @@ SELECT * FROM user_data;
 | 📊 Color-Coded Markers | Pink=Beinonit, Orange=Haflagah(1/2/3), Purple=Hachodesh, Green=Nekiim, Teal=Tevilah |
 | 7️⃣ Shiva Nekiim | 14-checkbox grid (night+day × 7), Hebrew date per day, calendar markers, tevilah night indicator |
 | ✂️ Mechitza (Partition) | Visual dividers in history that reset haflagah counting |
+| 📅 Hebrew Datepicker | Mini calendar popup for date selection — replaces dropdowns |
 | 🔑 API Key Management | Reveal/hide/copy with confirmation |
 | 📧 Email Reminders | Daily prisha reminders + twice-daily nekiim reminders (before sunset & morning) |
-| 📋 Hebrew Date Input | Gematria dropdowns (א׳–ל׳), year-dependent day counts |
+| 🌐 Multi-Language | Hebrew (RTL) + English (LTR), language toggle pre/post login |
+| 👤 Admin Panel | System stats, user management, registration toggle, role-based access |
+| 👁 Password Toggle | Show/hide password on all password fields |
 
 ---
 
