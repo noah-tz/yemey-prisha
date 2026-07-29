@@ -10,10 +10,9 @@ var Calendar = (function() {
   var currentHebYear;  // Hebrew year (5786)
   var calendarMode = 'hebrew'; // default to hebrew
 
-  var GREG_MONTHS = [
-    'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
-    'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
-  ];
+  function getGregMonths() {
+    return I18n.t('cal_greg_months');
+  }
 
   var VESET_LABELS = {
     onah_beinonit: 'עונה בינונית',
@@ -66,7 +65,7 @@ var Calendar = (function() {
 
     document.getElementById('cal-mode-toggle').addEventListener('click', function() {
       calendarMode = calendarMode === 'hebrew' ? 'gregorian' : 'hebrew';
-      this.textContent = calendarMode === 'hebrew' ? 'מציג: עברי' : 'מציג: לועזי';
+      this.textContent = calendarMode === 'hebrew' ? I18n.t('cal_showing_hebrew') : I18n.t('cal_showing_greg');
       render();
     });
   }
@@ -208,7 +207,7 @@ var Calendar = (function() {
       var yearName = HebrewDate.formatYear(currentHebYear);
       document.getElementById('cal-month-title').textContent = monthName + ' ' + yearName;
     } else {
-      document.getElementById('cal-month-title').textContent = GREG_MONTHS[currentMonth] + ' ' + currentYear;
+      document.getElementById('cal-month-title').textContent = getGregMonths()[currentMonth] + ' ' + currentYear;
     }
   }
 

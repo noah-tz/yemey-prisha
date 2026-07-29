@@ -999,3 +999,62 @@ body {
 .password-toggle:hover {
   color: var(--color-text);
 }
+
+/* === LTR Override (English mode) === */
+[dir="ltr"] .card,
+[dir="ltr"] .settings-container,
+[dir="ltr"] .history-container,
+[dir="ltr"] .auth-container,
+[dir="ltr"] .calendar-container {
+  text-align: left;
+}
+[dir="ltr"] .nav-bar {
+  direction: ltr;
+}
+[dir="ltr"] .nav-links {
+  direction: ltr;
+}
+[dir="ltr"] .form-group label {
+  text-align: left;
+}
+[dir="ltr"] .radio-option,
+[dir="ltr"] .toggle-option {
+  text-align: left;
+}
+[dir="ltr"] .data-table th,
+[dir="ltr"] .data-table td {
+  text-align: left;
+}
+[dir="ltr"] .data-table {
+  direction: ltr;
+}
+[dir="ltr"] .confirm-dialog {
+  text-align: left;
+}
+[dir="ltr"] .heb-dp-input {
+  text-align: left;
+}
+[dir="ltr"] .heb-dp-popup {
+  direction: ltr;
+}
+[dir="ltr"] .auth-switch,
+[dir="ltr"] .auth-form {
+  text-align: left;
+}
+[dir="ltr"] .settings-description {
+  text-align: left;
+}
+[dir="ltr"] .empty-state {
+  text-align: left;
+}
+[dir="ltr"] .calendar-legend {
+  direction: ltr;
+}
+[dir="ltr"] .password-wrapper input {
+  padding-left: 0.8rem;
+  padding-right: 2.5rem;
+}
+[dir="ltr"] .password-toggle {
+  left: auto;
+  right: 0.6rem;
+}

@@ -283,7 +283,7 @@ var History = (function() {
       // Onah
       var onahCell = document.createElement('td');
       var onah = cycle.onah || 'day';
-      onahCell.textContent = onah === 'night' ? 'לילה 🌙' : 'יום ☀️';
+      onahCell.textContent = onah === 'night' ? I18n.t('hist_onah_night') : I18n.t('hist_onah_day');
       row.appendChild(onahCell);
 
       // Interval
@@ -297,7 +297,7 @@ var History = (function() {
 
       var editBtn = document.createElement('button');
       editBtn.className = 'btn btn-edit';
-      editBtn.textContent = 'עריכה';
+      editBtn.textContent = I18n.t('hist_edit');
       editBtn.addEventListener('click', function() {
         startEdit(cycle);
       });
@@ -305,7 +305,7 @@ var History = (function() {
 
       var delBtn = document.createElement('button');
       delBtn.className = 'btn btn-danger';
-      delBtn.textContent = 'מחיקה';
+      delBtn.textContent = I18n.t('hist_delete');
       delBtn.addEventListener('click', function() {
         confirmDelete(cycle);
       });
@@ -445,17 +445,17 @@ var History = (function() {
     var id = cycle.id;
     var hebDate = { year: cycle.start_heb_year, month: cycle.start_heb_month, day: cycle.start_heb_day };
     var dateStr = HebrewDate.format(hebDate);
-    var onahStr = cycle.onah === 'night' ? '🌙 לילה' : '☀️ יום';
+    var onahStr = cycle.onah === 'night' ? I18n.t('hist_onah_night') : I18n.t('hist_onah_day');
 
     var overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
     overlay.innerHTML =
       '<div class="confirm-dialog">' +
-      '<p style="font-weight:600; margin-bottom:0.5rem;">האם למחוק וסת זו?</p>' +
+      '<p style="font-weight:600; margin-bottom:0.5rem;">' + I18n.t('hist_delete_confirm') + '</p>' +
       '<p style="font-size:0.9rem; color:var(--color-text-secondary);">' + dateStr + ' | ' + onahStr + '</p>' +
       '<div class="confirm-actions">' +
-      '<button class="btn btn-danger" id="confirm-yes">מחק</button>' +
-      '<button class="btn btn-secondary" id="confirm-no">ביטול</button>' +
+      '<button class="btn btn-danger" id="confirm-yes">' + I18n.t('hist_delete_btn') + '</button>' +
+      '<button class="btn btn-secondary" id="confirm-no">' + I18n.t('confirm_cancel') + '</button>' +
       '</div></div>';
 
     document.body.appendChild(overlay);
@@ -490,7 +490,7 @@ var History = (function() {
     rowDiv.innerHTML =
       '<div class="form-row" style="align-items:center;">' +
       '  <div class="form-group" style="flex:1;">' +
-      '    <input type="text" class="import-dp-input heb-dp-input" placeholder="בחירת תאריך" readonly style="cursor:pointer;">' +
+      '    <input type="text" class="import-dp-input heb-dp-input" placeholder="' + I18n.t('hist_pick_date') + '" readonly style="cursor:pointer;">' +
       '    <input type="hidden" class="import-day">' +
       '    <input type="hidden" class="import-month">' +
       '    <input type="hidden" class="import-year">' +
@@ -608,14 +608,14 @@ var History = (function() {
     dialog.style.cssText = 'max-width:340px; padding:1.5rem;';
 
     dialog.innerHTML =
-      '<h3 style="margin-bottom:0.75rem; font-size:1rem;">בחרי תאריך הפסק טהרה</h3>' +
-      '<p style="font-size:0.85rem; color:var(--color-text-secondary); margin-bottom:1rem;">7 הנקיים מתחילים למחרת יום ההפסק.</p>' +
+      '<h3 style="margin-bottom:0.75rem; font-size:1rem;">' + I18n.t('nekiim_pick_hefsek') + '</h3>' +
+      '<p style="font-size:0.85rem; color:var(--color-text-secondary); margin-bottom:1rem;">' + I18n.t('nekiim_pick_desc') + '</p>' +
       '<div class="form-group">' +
       '  <input type="text" id="hefsek-dp-input" class="heb-dp-input" placeholder="בחירת תאריך" readonly style="cursor:pointer; width:100%;">' +
       '</div>' +
       '<div class="confirm-actions" style="margin-top:1rem;">' +
-      '  <button class="btn btn-primary" id="hefsek-confirm">התחל ספירה</button>' +
-      '  <button class="btn btn-secondary" id="hefsek-cancel">ביטול</button>' +
+      '  <button class="btn btn-primary" id="hefsek-confirm">' + I18n.t('nekiim_start_btn') + '</button>' +
+      '  <button class="btn btn-secondary" id="hefsek-cancel">' + I18n.t('confirm_cancel') + '</button>' +
       '</div>' +
       '<p id="hefsek-error" style="color:var(--color-danger); font-size:0.85rem; margin-top:0.5rem;"></p>';
 
@@ -681,22 +681,24 @@ var History = (function() {
     container.innerHTML = '';
 
     if (nekiimList.length === 0) {
-      container.innerHTML = '<p style="color:var(--color-text-secondary); font-size:0.85rem;">אין ספירות פעילות. לחצי על 7️⃣ ליד וסת להתחיל ספירה.</p>';
+      container.innerHTML = '<p style="color:var(--color-text-secondary); font-size:0.85rem;">' + I18n.t('nekiim_empty') + '</p>';
       return;
     }
 
     nekiimList.forEach(function(n) {
       var div = document.createElement('div');
-      div.style.cssText = 'margin-bottom:1rem; padding:0.75rem; border:1px solid var(--color-border); border-radius:8px;';
+      var nekiimDir = I18n.getLang() === 'he' ? 'rtl' : 'ltr';
+      var nekiimAlign = I18n.getLang() === 'he' ? 'right' : 'left';
+      div.style.cssText = 'margin-bottom:1rem; padding:0.75rem; border:1px solid var(--color-border); border-radius:8px; direction:' + nekiimDir + '; text-align:' + nekiimAlign + ';';
 
       // Header row with title and cancel button
       var headerDiv = document.createElement('div');
       headerDiv.style.cssText = 'display:flex; justify-content:space-between; align-items:center;';
 
       var title = document.createElement('p');
-      title.style.cssText = 'font-weight:600; margin:0;';
+      title.style.cssText = 'font-weight:600; margin:0; direction:ltr; text-align:left;';
       var hefsekStr = n.hefsek_heb ? HebrewDate.format(n.hefsek_heb) : n.hefsek_date || n.start_date;
-      title.textContent = 'הפסק טהרה: ' + hefsekStr;
+      title.textContent = I18n.t('nekiim_hefsek') + ': ' + hefsekStr;
       if (n.completed) title.textContent += ' ✅';
       headerDiv.appendChild(title);
 
@@ -704,11 +706,11 @@ var History = (function() {
       var cancelBtn = document.createElement('button');
       cancelBtn.className = 'btn btn-danger';
       cancelBtn.style.cssText = 'font-size:0.7rem; padding:0.2rem 0.5rem;';
-      cancelBtn.textContent = '✕ מחיקה';
+      cancelBtn.textContent = I18n.t('nekiim_delete_btn');
       cancelBtn.title = 'מחיקת ספירה';
       cancelBtn.addEventListener('click', (function(nekiimId, cycleId) {
         return function() {
-          if (confirm('למחוק את הספירה?')) {
+          if (confirm(I18n.t('nekiim_delete_confirm'))) {
             Api.del('/api/cycles/' + cycleId + '/nekiim/' + nekiimId)
               .then(function() { render(); })
               .catch(function(err) { alert(err.message || 'שגיאה'); });
@@ -723,8 +725,8 @@ var History = (function() {
       var tevilahStr = n.tevilah_heb ? HebrewDate.format(n.tevilah_heb) : '';
       if (tevilahStr) {
         var tevilahP = document.createElement('p');
-        tevilahP.style.cssText = 'font-size:0.85rem; color:var(--color-primary); margin-top:0.25rem;';
-        tevilahP.textContent = 'טבילה: ליל ' + tevilahStr;
+        tevilahP.style.cssText = 'font-size:0.85rem; color:var(--color-primary); margin-top:0.25rem; direction:ltr; text-align:left;';
+        tevilahP.textContent = I18n.t('nekiim_tevilah') + ' ' + tevilahStr;
         div.appendChild(tevilahP);
       }
 
@@ -801,7 +803,7 @@ var History = (function() {
       }
       var progressP = document.createElement('p');
       progressP.style.cssText = 'font-size:0.75rem; color:var(--color-text-secondary); margin-top:0.5rem; text-align:center;';
-      progressP.textContent = checkedCount + '/14 בדיקות';
+      progressP.textContent = checkedCount + '/14 ' + I18n.t('nekiim_checks');
       div.appendChild(progressP);
 
       container.appendChild(div);

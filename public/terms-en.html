@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service — Luach Vestot</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <style>
+    body { font-family: -apple-system, sans-serif; max-width: 700px; margin: 0 auto; padding: 2rem; line-height: 1.8; color: #333; background: #f9f9f9; }
+    h1 { color: #1976D2; }
+    h2 { color: #333; margin-top: 2rem; border-bottom: 1px solid #ddd; padding-bottom: 0.5rem; }
+    .version { color: #999; font-size: 0.85rem; }
+    .highlight { background: #FFF3E0; padding: 1rem; border-radius: 8px; border-left: 4px solid #FF9800; margin: 1rem 0; }
+    a { color: #1976D2; }
+  </style>
+</head>
+<body>
+  <h1>Terms of Service & Privacy Policy</h1>
+  <p class="version">Version 1.1 | Last updated: July 2026</p>
+
+  <h2>1. General</h2>
+  <p>The "Luach Vestot" service (the "Service") is a digital tool for personal cycle tracking and calculating separation days according to Halacha. The Service is provided "AS IS".</p>
+  <p>Using the Service constitutes full agreement to these terms.</p>
+
+  <h2>2. Information Collected</h2>
+  <ul>
+    <li><strong>Email address</strong> — for registration, login, and reminders</li>
+    <li><strong>Cycle data</strong> — sighting dates, periods (day/night), and halachic settings</li>
+    <li><strong>Derived data</strong> — automatically calculated separation days</li>
+  </ul>
+  <p>No additional information is collected (no tracking cookies, no analytics, no advertising).</p>
+
+  <h2>3. Encryption</h2>
+  <p>All sensitive data (sighting dates, separation days, periods) is encrypted using <strong>AES-256-GCM</strong> with a key derived from the user's password.</p>
+  <div class="highlight">
+    <strong>About Encryption:</strong>
+    <p>Data is protected with strong encryption (AES-256-GCM) and is not accessible via admin interface, not saved in logs, and not visible during normal service operation.</p>
+    <p>As part of service operation (e.g., sending scheduled reminders), the system processes data automatically for a short time in memory only and deletes it immediately. <strong>At no point is data saved in plain text</strong> and it is not accessible for manual viewing.</p>
+    <p>However, as with any server-based service, absolute immunity from every theoretical scenario cannot be guaranteed. The service operates with industry-standard security measures but <strong>does not guarantee the absolute protection level of end-to-end encryption (E2E)</strong>.</p>
+    <p>The user acknowledges awareness of these limitations and releases the service owner from any claim, demand, or lawsuit related to information exposure, should it occur.</p>
+  </div>
+
+  <h2>4. Use of Information</h2>
+  <p>Information is used <strong>solely</strong> for the following purposes:</p>
+  <ul>
+    <li>Calculating separation days and displaying them on the calendar</li>
+    <li>Sending reminders to verified email addresses (with user consent)</li>
+  </ul>
+  <p><strong>Information is not transferred, sold, or shared with any third party</strong>, except the email sending service (Brevo/Sendinblue) for reminder delivery only.</p>
+
+  <h2>5. Security</h2>
+  <ul>
+    <li>Field-level encryption (AES-256-GCM)</li>
+    <li>Passwords stored as irreversible hash (bcrypt, 12 rounds)</li>
+    <li>Access limited by password or API key</li>
+    <li>Server runs in isolated environment (Docker) with minimal permissions</li>
+    <li>Encrypted communication (HTTPS/TLS)</li>
+  </ul>
+
+  <h2>6. User Rights</h2>
+  <ul>
+    <li><strong>View</strong> — all information viewable through the interface</li>
+    <li><strong>Correct</strong> — any record can be edited or deleted</li>
+    <li><strong>Delete</strong> — account and all related data can be deleted upon request</li>
+    <li><strong>Export</strong> — data can be exported via the API</li>
+  </ul>
+
+  <h2>7. Halachic Calculations — Liability Limitation</h2>
+  <div class="highlight">
+    <strong>The Service does not replace halachic ruling.</strong>
+    <p>Calculations are performed by mathematical algorithm only and do not consider personal circumstances, unique community customs, or individual rabbinic rulings.</p>
+    <p><strong>Consult a qualified Rabbi</strong> for any halachic question.</p>
+    <p>The service owner is <strong>not responsible</strong> for any damage, error, or inaccuracy in calculations.</p>
+  </div>
+
+  <h2>8. Service Termination & Data Non-Retention</h2>
+  <p>The service owner may <strong>terminate, suspend, or close the Service at any time</strong>, without prior notice and without obligation to provide reasons, including deleting accounts and data.</p>
+  <p><strong>There is no commitment to data retention, backup, or account maintenance.</strong> The user acknowledges that data may be deleted or lost at any time, for any reason, and releases the service owner from any claim, demand, or lawsuit in connection therewith.</p>
+  <p>It is recommended to independently export data backups using the export button in the interface.</p>
+
+  <h2>9. Liability Limitation</h2>
+  <p>The Service is provided "AS IS" without warranty of any kind, express or implied. The service owner shall not be liable for any direct, indirect, special, or consequential damage arising from use of the Service, including:</p>
+  <ul>
+    <li>Data loss or deletion</li>
+    <li>Calculation errors</li>
+    <li>Service availability interruptions or termination</li>
+    <li>Unauthorized access to information</li>
+  </ul>
+
+  <h2>10. Email</h2>
+  <p>The Service sends email reminders only to addresses verified by the recipient. Reminders can be disabled at any time from the settings page.</p>
+
+  <h2>11. Cookies</h2>
+  <p>The Service uses a technical session cookie (httpOnly) for maintaining login only. No tracking, advertising, or analytics cookies are used.</p>
+
+  <h2>12. Changes to Terms</h2>
+  <p>The service owner reserves the right to update these terms. Material changes will be presented to the user upon next login.</p>
+
+  <h2>13. Governing Law</h2>
+  <p>These terms are governed by Israeli law. Exclusive jurisdiction is granted to the courts in the Tel Aviv-Jaffa district.</p>
+
+  <h2>14. Contact</h2>
+  <p>For privacy-related questions or requests, contact via the settings page on the website, or through the contact page.</p>
+  <p>The service is not operated by a company — it is a personal project provided without financial compensation.</p>
+
+  <hr>
+  <p style="text-align:center; color:#999; font-size:0.85rem;">&copy; Luach Vestot | Terms of Service v1.1</p>
+</body>
+</html>

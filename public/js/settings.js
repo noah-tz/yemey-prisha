@@ -128,6 +128,15 @@ var Settings = (function() {
         });
     });
 
+    // Language selector
+    var langSelect = document.getElementById('setting-lang');
+    if (langSelect) {
+      langSelect.value = I18n.getLang();
+      langSelect.addEventListener('change', function() {
+        I18n.setLang(this.value);
+      });
+    }
+
     // City/location selection
     var citySelect = document.getElementById('setting-city');
     if (citySelect) {
@@ -265,7 +274,7 @@ var Settings = (function() {
 
     Api.put('/api/settings', payload)
       .then(function() {
-        msgEl.textContent = 'ההגדרות נשמרו בהצלחה ✓';
+        msgEl.textContent = I18n.t('settings_saved');
         setTimeout(function() {
           msgEl.textContent = '';
         }, 3000);
@@ -324,7 +333,7 @@ var Settings = (function() {
       .then(function() {
         if (msgEl) {
           msgEl.className = 'success-message';
-          msgEl.textContent = 'הגדרות 7 נקיים נשמרו ✓';
+          msgEl.textContent = I18n.t('settings_nekiim_saved');
           setTimeout(function() { msgEl.textContent = ''; }, 3000);
         }
       })
@@ -361,11 +370,11 @@ var Settings = (function() {
           var statusSpan = document.createElement('span');
           statusSpan.style.cssText = 'font-size:0.75rem; padding:0.15rem 0.4rem; border-radius:4px;';
           if (e.verified) {
-            statusSpan.textContent = '\u2713 מאומת';
+            statusSpan.textContent = I18n.t('settings_verified');
             statusSpan.style.background = '#E8F5E9';
             statusSpan.style.color = '#2E7D32';
           } else {
-            statusSpan.textContent = 'ממתין לאימות';
+            statusSpan.textContent = I18n.t('settings_pending');
             statusSpan.style.background = '#FFF3E0';
             statusSpan.style.color = '#E65100';
           }
@@ -395,10 +404,10 @@ var Settings = (function() {
         var actionsEl = document.getElementById('encryption-mode-actions');
         
         if (data.mode === 'e2e') {
-          statusEl.textContent = '\uD83D\uDD12 מצב E2E (הצפנה מקצה לקצה)';
+          statusEl.textContent = I18n.t('enc_e2e_title');
           statusEl.style.color = '#388E3C';
-          descEl.textContent = 'הנתונים מוצפנים באופן מוחלט. רק סיסמתך יכולה לפענח אותם. תזכורות באימייל, API ו-MCP אינם זמינים במצב זה.';
-          actionsEl.innerHTML = '<button class="btn btn-primary" id="enable-extended-btn">הפעל גישה מורחבת (API + תזכורות)</button>';
+          descEl.textContent = I18n.t('enc_e2e_desc');
+          actionsEl.innerHTML = '<button class="btn btn-primary" id="enable-extended-btn">' + I18n.t('enc_enable_extended') + '</button>';
           
           document.getElementById('enable-extended-btn').addEventListener('click', function() {
             showExtendedModeConfirm();
@@ -410,13 +419,13 @@ var Settings = (function() {
           if (apiKeyCard) apiKeyCard.style.display = 'none';
           if (reminderCard) reminderCard.style.display = 'none';
         } else {
-          statusEl.textContent = '\uD83D\uDD14 מצב מורחב (API + תזכורות)';
+          statusEl.textContent = I18n.t('enc_extended_title');
           statusEl.style.color = '#1976D2';
-          descEl.textContent = 'תזכורות באימייל, API ו-MCP פעילים. המערכת מסוגלת לעבד את הנתונים באופן אוטומטי.';
-          actionsEl.innerHTML = '<button class="btn btn-secondary" id="disable-extended-btn">חזרה למצב E2E (ביטול גישה מורחבת)</button>';
+          descEl.textContent = I18n.t('enc_extended_desc');
+          actionsEl.innerHTML = '<button class="btn btn-secondary" id="disable-extended-btn">' + I18n.t('enc_disable_extended') + '</button>';
           
           document.getElementById('disable-extended-btn').addEventListener('click', function() {
-            if (confirm('חזרה למצב E2E תבטל תזכורות באימייל וגישת API. להמשיך?')) {
+            if (confirm(I18n.t('enc_disable_confirm'))) {
               Api.post('/api/settings/disable-extended', {})
                 .then(function() { loadEncryptionMode(); render(); })
                 .catch(function(err) { alert(err.message); });
@@ -437,15 +446,15 @@ var Settings = (function() {
     var overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
     overlay.innerHTML = 
-      '<div class="confirm-dialog" style="max-width:450px; text-align:right;">' +
-      '<h3 style="margin-bottom:1rem; color:#1976D2;">שינוי מצב הצפנה</h3>' +
-      '<p style="line-height:1.7; font-size:0.9rem;">הנתונים שלך מוצפנים כעת בשיטת הצפנה מקצה לקצה (E2E) — המערכת אינה יכולה לגשת אליהם ללא סיסמתך.</p>' +
-      '<p style="line-height:1.7; font-size:0.9rem; margin-top:0.75rem;">הפעלת תזכורות ו/או גישת API דורשת מעבר לשיטת הצפנה שבה המערכת מסוגלת לעבד את הנתונים באופן אוטומטי. האימייל אינו נשמר במערכת ושום אדם אינו רואה אותו מלבדך.</p>' +
-      '<p style="line-height:1.7; font-size:0.85rem; margin-top:0.75rem;">המערכת אינה נושאת באחריות למקרה של פגיעה בסודיות הנתונים בשל הפעלת שירות זה.</p>' +
-      '<p style="line-height:1.7; font-size:0.85rem; margin-top:0.5rem; color:#666;">ניתן לבטל בכל עת — ביטול מחזיר את ההצפנה למצב E2E.</p>' +
+      '<div class="confirm-dialog" style="max-width:450px; text-align:' + (I18n.getLang() === 'he' ? 'right' : 'left') + ';">' +
+      '<h3 style="margin-bottom:1rem; color:#1976D2;">' + I18n.t('enc_confirm_title') + '</h3>' +
+      '<p style="line-height:1.7; font-size:0.9rem;">' + I18n.t('enc_confirm_p1') + '</p>' +
+      '<p style="line-height:1.7; font-size:0.9rem; margin-top:0.75rem;">' + I18n.t('enc_confirm_p2') + '</p>' +
+      '<p style="line-height:1.7; font-size:0.85rem; margin-top:0.75rem;">' + I18n.t('enc_confirm_p3') + '</p>' +
+      '<p style="line-height:1.7; font-size:0.85rem; margin-top:0.5rem; color:#666;">' + I18n.t('enc_confirm_p4') + '</p>' +
       '<div style="margin-top:1.5rem; display:flex; gap:0.75rem; justify-content:center;">' +
-      '<button class="btn btn-primary" id="confirm-extended-yes">אני מאשר/ת</button>' +
-      '<button class="btn btn-secondary" id="confirm-extended-no">ביטול</button>' +
+      '<button class="btn btn-primary" id="confirm-extended-yes">' + I18n.t('enc_confirm_yes') + '</button>' +
+      '<button class="btn btn-secondary" id="confirm-extended-no">' + I18n.t('enc_confirm_no') + '</button>' +
       '</div></div>';
     
     document.body.appendChild(overlay);
@@ -455,7 +464,7 @@ var Settings = (function() {
       Api.post('/api/settings/enable-extended', {})
         .then(function() {
           var msgEl = document.getElementById('encryption-mode-message');
-          msgEl.textContent = 'גישה מורחבת הופעלה \u2713';
+          msgEl.textContent = I18n.t('enc_enabled_msg');
           setTimeout(function() { msgEl.textContent = ''; }, 3000);
           loadEncryptionMode();
           render();

@@ -20,6 +20,9 @@ var App = (function() {
   var isAdmin = false;
 
   function init() {
+    // Initialize i18n
+    I18n.init();
+
     // Dark mode toggle
     var themeToggle = document.getElementById('theme-toggle');
     var savedTheme = localStorage.getItem('theme') || 'light';
@@ -38,6 +41,18 @@ var App = (function() {
     Calendar.init();
     History.init();
     Settings.init();
+
+    // Auth page language toggle
+    var authLangBtn = document.getElementById('auth-lang-toggle');
+    if (authLangBtn) {
+      authLangBtn.addEventListener('click', function() {
+        var next = I18n.getLang() === 'he' ? 'en' : 'he';
+        I18n.setLang(next);
+        // Update the lang selector in settings too
+        var langSelect = document.getElementById('setting-lang');
+        if (langSelect) langSelect.value = next;
+      });
+    }
 
     // Logout handler
     document.getElementById('logout-btn').addEventListener('click', function(e) {
@@ -175,13 +190,13 @@ var App = (function() {
       var el = document.getElementById('admin-stats');
       el.innerHTML =
         '<div style="text-align:center; padding:0.75rem; background:var(--color-bg-secondary, #f0f4f8); border-radius:8px;">' +
-        '<div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">' + data.total_users + '</div><div style="font-size:0.8rem; color:var(--color-text-secondary);">משתמשים</div></div>' +
+        '<div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">' + data.total_users + '</div><div style="font-size:0.8rem; color:var(--color-text-secondary);">' + I18n.t('admin_stat_users') + '</div></div>' +
         '<div style="text-align:center; padding:0.75rem; background:var(--color-bg-secondary, #f0f4f8); border-radius:8px;">' +
-        '<div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">' + data.users_with_data + '</div><div style="font-size:0.8rem; color:var(--color-text-secondary);">עם נתונים</div></div>' +
+        '<div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">' + data.users_with_data + '</div><div style="font-size:0.8rem; color:var(--color-text-secondary);">' + I18n.t('admin_stat_with_data') + '</div></div>' +
         '<div style="text-align:center; padding:0.75rem; background:var(--color-bg-secondary, #f0f4f8); border-radius:8px;">' +
-        '<div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">' + data.new_users_7d + '</div><div style="font-size:0.8rem; color:var(--color-text-secondary);">חדשים (7 ימים)</div></div>' +
+        '<div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">' + data.new_users_7d + '</div><div style="font-size:0.8rem; color:var(--color-text-secondary);">' + I18n.t('admin_stat_new_7d') + '</div></div>' +
         '<div style="text-align:center; padding:0.75rem; background:var(--color-bg-secondary, #f0f4f8); border-radius:8px;">' +
-        '<div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">' + formatBytes(data.db_size_bytes) + '</div><div style="font-size:0.8rem; color:var(--color-text-secondary);">גודל DB</div></div>';
+        '<div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">' + formatBytes(data.db_size_bytes) + '</div><div style="font-size:0.8rem; color:var(--color-text-secondary);">' + I18n.t('admin_stat_db_size') + '</div></div>';
     });
 
     // Load registration status

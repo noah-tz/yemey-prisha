@@ -245,13 +245,13 @@ var HebrewDatepicker = (function() {
 
       var title = document.createElement('p');
       title.className = 'heb-dp-onah-title';
-      title.textContent = HebrewDate.toGematria(selected.day) + ' ' + MONTH_NAMES[selected.month] + ' — בחרי עונה:';
+      title.textContent = HebrewDate.toGematria(selected.day) + ' ' + MONTH_NAMES[selected.month] + ' — ' + I18n.t('dp_pick_onah');
       gridEl.appendChild(title);
 
       var btnDay = document.createElement('button');
       btnDay.type = 'button';
       btnDay.className = 'heb-dp-onah-btn heb-dp-onah-day';
-      btnDay.textContent = '☀️ יום';
+      btnDay.textContent = I18n.t('dp_day');
       btnDay.addEventListener('click', function(e) {
         e.stopPropagation();
         close();
@@ -263,7 +263,7 @@ var HebrewDatepicker = (function() {
       var btnNight = document.createElement('button');
       btnNight.type = 'button';
       btnNight.className = 'heb-dp-onah-btn heb-dp-onah-night';
-      btnNight.textContent = '🌙 לילה';
+      btnNight.textContent = I18n.t('dp_night');
       btnNight.addEventListener('click', function(e) {
         e.stopPropagation();
         close();

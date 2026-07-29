@@ -9,19 +9,19 @@
   <meta name="theme-color" content="#1976D2">
   <link rel="stylesheet" href="/css/styles.css">
   <script>
-    (function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
+    (function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||'he';document.documentElement.setAttribute('lang',l);document.documentElement.setAttribute('dir',l==='he'?'rtl':'ltr');})();
   </script>
 </head>
 <body>
   <nav id="main-nav" class="nav-bar" style="display:none;">
-    <span class="nav-brand">לוח וסתות</span>
+    <span class="nav-brand" data-i18n="app_title">לוח וסתות</span>
     <div class="nav-links">
-      <a href="#calendar" class="nav-link" data-view="calendar">לוח</a>
-      <a href="#history" class="nav-link" data-view="history">היסטוריה</a>
-      <a href="#settings" class="nav-link" data-view="settings">הגדרות</a>
-      <a href="#admin" class="nav-link" data-view="admin" id="nav-admin" style="display:none;">ניהול</a>
+      <a href="#calendar" class="nav-link" data-view="calendar" data-i18n="nav_calendar">לוח</a>
+      <a href="#history" class="nav-link" data-view="history" data-i18n="nav_history">היסטוריה</a>
+      <a href="#settings" class="nav-link" data-view="settings" data-i18n="nav_settings">הגדרות</a>
+      <a href="#admin" class="nav-link" data-view="admin" id="nav-admin" style="display:none;" data-i18n="nav_admin">ניהול</a>
       <button id="theme-toggle" class="nav-link" style="border:none; cursor:pointer; background:none; font-size:1.1rem;" title="מצב כהה/בהיר">🌙</button>
-      <a href="#" id="logout-btn" class="nav-link nav-logout">יציאה</a>
+      <a href="#" id="logout-btn" class="nav-link nav-logout" data-i18n="nav_logout">יציאה</a>
     </div>
   </nav>
 
@@ -29,45 +29,48 @@
     <!-- Auth View -->
     <section id="view-auth" class="view">
       <div class="auth-container">
-        <h1 class="auth-title">לוח וסתות</h1>
+        <div style="text-align:center; margin-bottom:0.5rem;">
+          <button id="auth-lang-toggle" class="btn btn-secondary" style="font-size:0.75rem; padding:0.2rem 0.6rem;">EN / עב</button>
+        </div>
+        <h1 class="auth-title" data-i18n="app_title">לוח וסתות</h1>
 
         <div id="auth-login">
-          <h2>כניסה</h2>
+          <h2 data-i18n="auth_login_title">כניסה</h2>
           <form id="login-form" class="auth-form">
             <div class="form-group">
-              <label for="login-email">דוא״ל</label>
+              <label for="login-email" data-i18n="auth_email">דוא"ל</label>
               <input type="email" id="login-email" required autocomplete="email">
             </div>
             <div class="form-group">
-              <label for="login-password">סיסמה</label>
+              <label for="login-password" data-i18n="auth_password">סיסמה</label>
               <div class="password-wrapper">
                 <input type="password" id="login-password" required autocomplete="current-password">
                 <button type="button" class="password-toggle" tabindex="-1">👁</button>
               </div>
             </div>
             <div id="login-error" class="error-message" role="alert"></div>
-            <button type="submit" class="btn btn-primary">כניסה</button>
-            <p style="text-align:center; margin-top:0.75rem;"><a href="#" id="forgot-password-link" style="color:var(--color-text-secondary); font-size:0.85rem;">שכחתי סיסמה</a></p>
+            <button type="submit" class="btn btn-primary" data-i18n="auth_login_btn">כניסה</button>
+            <p style="text-align:center; margin-top:0.75rem;"><a href="#" id="forgot-password-link" style="color:var(--color-text-secondary); font-size:0.85rem;" data-i18n="auth_forgot">שכחתי סיסמה</a></p>
           </form>
-          <p class="auth-switch">אין לך חשבון? <a href="#" id="show-register">הרשמה</a></p>
+          <p class="auth-switch"><span data-i18n="auth_no_account">אין לך חשבון?</span> <a href="#" id="show-register" data-i18n="auth_register_link">הרשמה</a></p>
         </div>
 
         <div id="auth-register" style="display:none;">
-          <h2>הרשמה</h2>
+          <h2 data-i18n="auth_register_title">הרשמה</h2>
           <form id="register-form" class="auth-form">
             <div class="form-group">
-              <label for="register-email">דוא״ל</label>
+              <label for="register-email" data-i18n="auth_email">דוא"ל</label>
               <input type="email" id="register-email" required autocomplete="email">
             </div>
             <div class="form-group">
-              <label for="register-password">סיסמה</label>
+              <label for="register-password" data-i18n="auth_password">סיסמה</label>
               <div class="password-wrapper">
                 <input type="password" id="register-password" required autocomplete="new-password">
                 <button type="button" class="password-toggle" tabindex="-1">👁</button>
               </div>
             </div>
             <div class="form-group">
-              <label for="register-confirm">אימות סיסמה</label>
+              <label for="register-confirm" data-i18n="auth_confirm_password">אימות סיסמה</label>
               <div class="password-wrapper">
                 <input type="password" id="register-confirm" required autocomplete="new-password">
                 <button type="button" class="password-toggle" tabindex="-1">👁</button>
@@ -77,14 +80,14 @@
               <label class="toggle-option" style="border: none; padding: 0;">
                 <input type="checkbox" id="register-terms" required>
                 <span style="font-size: 0.85rem;">
-                  קראתי ואני מסכים/ה ל<a href="/terms.html" target="_blank" style="color: var(--color-primary);">תנאי השימוש ומדיניות הפרטיות</a>
+                  <span data-i18n="auth_terms_agree">קראתי ואני מסכים ל</span><a href="/terms.html" id="terms-link" target="_blank" style="color: var(--color-primary);" data-i18n="auth_terms_link">תנאי השימוש ומדיניות הפרטיות</a>
                 </span>
               </label>
             </div>
             <div id="register-error" class="error-message" role="alert"></div>
-            <button type="submit" class="btn btn-primary">הרשמה</button>
+            <button type="submit" class="btn btn-primary" data-i18n="auth_register_btn">הרשמה</button>
           </form>
-          <p class="auth-switch">יש לך חשבון? <a href="#" id="show-login">כניסה</a></p>
+          <p class="auth-switch"><span data-i18n="auth_has_account">יש לך חשבון?</span> <a href="#" id="show-login" data-i18n="auth_login_link">כניסה</a></p>
         </div>
       </div>
     </section>
@@ -93,7 +96,7 @@
     <section id="view-calendar" class="view" style="display:none;">
       <div class="calendar-container">
         <div style="text-align: center; margin-bottom: 0.5rem;">
-          <button id="cal-mode-toggle" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.3rem 0.75rem;">
+          <button id="cal-mode-toggle" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.3rem 0.75rem;" data-i18n="cal_showing_hebrew">
             מציג: עברי
           </button>
         </div>
@@ -128,10 +131,10 @@
     <!-- History View -->
     <section id="view-history" class="view" style="display:none;">
       <div class="history-container">
-        <h2>היסטוריית וסתות</h2>
+        <h2 data-i18n="hist_title">היסטוריית וסתות</h2>
 
         <div id="cycle-form-container" class="card">
-          <h3 id="cycle-form-title">הוספת וסת</h3>
+          <h3 id="cycle-form-title" data-i18n="hist_add_title">הוספת וסת</h3>
           <form id="cycle-form" class="cycle-form">
             <input type="hidden" id="cycle-edit-id">
             <input type="hidden" id="cycle-heb-day">
@@ -140,35 +143,35 @@
             <input type="hidden" id="cycle-onah" value="day">
             <div class="form-row">
               <div class="form-group" style="flex:1;">
-                <label>תאריך ועונה</label>
-                <input type="text" id="cycle-datepicker-input" class="heb-dp-input" placeholder="בחירת תאריך" readonly>
+                <label data-i18n="hist_date_onah">תאריך ועונה</label>
+                <input type="text" id="cycle-datepicker-input" class="heb-dp-input" data-i18n-placeholder="hist_pick_date" placeholder="בחירת תאריך" readonly>
               </div>
             </div>
             <div class="form-group" id="sunset-display" style="display:none;">
-              <label>שקיעה ביום זה</label>
+              <label data-i18n="hist_sunset_label">שקיעה ביום זה</label>
               <span id="sunset-time" style="font-weight:600; color:var(--color-primary);"></span>
             </div>
             <div id="cycle-form-error" class="error-message" role="alert"></div>
             <div class="form-actions">
-              <button type="submit" class="btn btn-primary" id="cycle-submit-btn">הוסף</button>
-              <button type="button" class="btn btn-secondary" id="cycle-cancel-btn" style="display:none;">ביטול</button>
+              <button type="submit" class="btn btn-primary" id="cycle-submit-btn" data-i18n="hist_add_btn">הוסף</button>
+              <button type="button" class="btn btn-secondary" id="cycle-cancel-btn" style="display:none;" data-i18n="hist_cancel_btn">ביטול</button>
             </div>
           </form>
         </div>
 
         <div class="card" style="margin-top: 1rem;">
-          <h3>ייבוא וסתות קודמות</h3>
-          <p class="settings-description">הוסף שורות עם תאריך עברי ועונה. לחץ + להוספת שורה נוספת.</p>
+          <h3 data-i18n="hist_import_title">ייבוא וסתות קודמות</h3>
+          <p class="settings-description" data-i18n="hist_import_desc">הוסף שורות עם תאריך עברי ועונה. לחץ + להוספת שורה נוספת.</p>
           <div id="import-entries">
             <!-- Dynamic entries will be added here -->
           </div>
           <div class="form-actions" style="margin-top: 0.75rem;">
-            <button class="btn btn-secondary" id="import-add-row-btn" type="button">+ הוסף שורה</button>
+            <button class="btn btn-secondary" id="import-add-row-btn" type="button" data-i18n="hist_import_add_row">+ הוסף שורה</button>
           </div>
           <div id="import-error" class="error-message" role="alert"></div>
           <div id="import-success" class="success-message" role="status"></div>
           <div class="form-actions" style="margin-top: 0.75rem;">
-            <button class="btn btn-primary" id="import-btn" type="button">ייבוא</button>
+            <button class="btn btn-primary" id="import-btn" type="button" data-i18n="hist_import_btn">ייבוא</button>
           </div>
         </div>
 
@@ -176,25 +179,25 @@
           <table id="history-table" class="data-table">
             <thead>
               <tr>
-                <th>תאריך עברי</th>
-                <th>תאריך לועזי</th>
-                <th>עונה</th>
-                <th>הפלגה (ימים)</th>
-                <th>פעולות</th>
+                <th data-i18n="hist_col_heb_date">תאריך עברי</th>
+                <th data-i18n="hist_col_greg_date">תאריך לועזי</th>
+                <th data-i18n="hist_col_onah">עונה</th>
+                <th data-i18n="hist_col_interval">הפלגה (ימים)</th>
+                <th data-i18n="hist_col_actions">פעולות</th>
               </tr>
             </thead>
             <tbody id="history-tbody"></tbody>
           </table>
-          <p id="history-empty" class="empty-state" style="display:none;">אין וסתות רשומות עדיין.</p>
+          <p id="history-empty" class="empty-state" style="display:none;" data-i18n="hist_empty">אין וסתות רשומות עדיין.</p>
         </div>
         <div style="margin-top: 1.5rem; text-align: center;">
-          <button class="btn btn-secondary" id="export-btn">📥 ייצוא נתונים (JSON)</button>
+          <button class="btn btn-secondary" id="export-btn" data-i18n="hist_export">📥 ייצוא נתונים (JSON)</button>
         </div>
 
         <div class="card" style="margin-top: 1.5rem;">
-          <h3>שבעה נקיים</h3>
+          <h3 data-i18n="nekiim_title">שבעה נקיים</h3>
           <div id="nekiim-section">
-            <p class="settings-description">ספירת שבעה נקיים לאחר הפסק טהרה.</p>
+            <p class="settings-description" data-i18n="nekiim_desc">ספירת שבעה נקיים לאחר הפסק טהרה.</p>
             <div id="nekiim-list"></div>
           </div>
         </div>
@@ -204,25 +207,25 @@
     <!-- Settings View -->
     <section id="view-settings" class="view" style="display:none;">
       <div class="settings-container">
-        <h2>הגדרות</h2>
+        <h2 data-i18n="settings_title">הגדרות</h2>
         <div class="card">
-          <h3>בחירת פוסק</h3>
-          <p class="settings-description">
+          <h3 data-i18n="settings_posek_title">בחירת פוסק</h3>
+          <p class="settings-description" data-i18n="settings_posek_desc">
             הבחירה בפוסק משפיעה על אופן חישוב הווסתות ועל הימים שבהם יש לפרוש.
           </p>
           <div class="radio-group" role="radiogroup" aria-label="בחירת פוסק">
             <label class="radio-option">
               <input type="radio" name="posek" value="rama">
               <span class="radio-label">
-                <strong>רמ״א</strong>
-                <small>מנהג אשכנז — מחמיר יותר בחישוב הווסתות</small>
+                <strong data-i18n="settings_rama">רמ״א</strong>
+                <small data-i18n="settings_rama_desc">מנהג אשכנז — מחמיר יותר בחישוב הווסתות</small>
               </span>
             </label>
             <label class="radio-option">
               <input type="radio" name="posek" value="mechaber">
               <span class="radio-label">
-                <strong>מחבר</strong>
-                <small>מנהג ספרד — פוסק לפי השולחן ערוך</small>
+                <strong data-i18n="settings_mechaber">מחבר</strong>
+                <small data-i18n="settings_mechaber_desc">מנהג ספרד — פוסק לפי השולחן ערוך</small>
               </span>
             </label>
           </div>
@@ -230,30 +233,30 @@
         </div>
 
         <div class="card" style="margin-top: 1.5rem;">
-          <h3>הגדרות מתקדמות</h3>
+          <h3 data-i18n="settings_advanced">הגדרות מתקדמות</h3>
           <div class="toggle-group">
             <label class="toggle-option">
               <input type="checkbox" id="setting-beinonit31" checked>
-              <span>עונה בינונית 31 — פרישה גם ביום ה-31</span>
+              <span data-i18n="settings_beinonit31">עונה בינונית 31 — פרישה גם ביום ה-31</span>
             </label>
             <label class="toggle-option">
               <input type="checkbox" id="setting-orzarua" checked>
-              <span>עונת אור זרוע — פרישה גם בעונה ההפוכה</span>
+              <span data-i18n="settings_orzarua">עונת אור זרוע — פרישה גם בעונה ההפוכה</span>
             </label>
             <label class="toggle-option">
               <input type="checkbox" id="setting-haflagah3" checked>
-              <span>הפלגה שלישית — זכירת שלוש הפלגות אחרונות</span>
+              <span data-i18n="settings_haflagah3">הפלגה שלישית — זכירת שלוש הפלגות אחרונות</span>
             </label>
             <label class="toggle-option">
               <input type="checkbox" id="setting-hachodesh-overflow">
-              <span>וסת החודש בל' מלא לפני חסר — פרישה בא' של החודש הבא</span>
+              <span data-i18n="settings_hachodesh">וסת החודש בל' מלא לפני חסר — פרישה בא' של החודש הבא</span>
             </label>
           </div>
           <div id="advanced-settings-message" class="success-message" role="status"></div>
         </div>
 
         <div class="card" style="margin-top: 1.5rem;">
-          <h3>מצב הצפנה</h3>
+          <h3 data-i18n="settings_encryption">מצב הצפנה</h3>
           <div id="encryption-mode-display">
             <p id="encryption-mode-status" style="font-weight: 600; margin-bottom: 0.75rem;"></p>
             <p id="encryption-mode-desc" class="settings-description"></p>
@@ -263,26 +266,26 @@
         </div>
 
         <div class="card" style="margin-top: 1.5rem;">
-          <h3>תזכורות באימייל</h3>
-          <p class="settings-description">
+          <h3 data-i18n="settings_reminders">תזכורות באימייל</h3>
+          <p class="settings-description" data-i18n="settings_reminders_desc">
             קבל תזכורת יומית לפני ימי פרישה (נשלח ב-16:00). ניתן להוסיף כתובות נוספות (בן/בת זוג).
           </p>
           <div class="toggle-group">
             <label class="toggle-option">
               <input type="checkbox" id="setting-reminder-enabled">
-              <span>הפעל תזכורות באימייל</span>
+              <span data-i18n="settings_reminders_enable">הפעל תזכורות באימייל</span>
             </label>
           </div>
 
           <div id="reminder-emails-section" style="margin-top: 1rem;">
-            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">כתובות מייל לתזכורות:</h4>
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;" data-i18n="settings_email_list">כתובות מייל לתזכורות:</h4>
             <div id="reminder-emails-list"></div>
             <div class="form-row" style="margin-top: 0.75rem;">
               <div class="form-group" style="flex: 1;">
                 <input type="email" id="add-reminder-email" placeholder="example@gmail.com" dir="ltr" style="font-size: 0.9rem;">
               </div>
               <div class="form-group" style="flex: 0 0 auto;">
-                <button class="btn btn-primary" id="add-reminder-email-btn" style="font-size: 0.85rem;">הוסף ואמת</button>
+                <button class="btn btn-primary" id="add-reminder-email-btn" style="font-size: 0.85rem;" data-i18n="settings_email_add">הוסף ואמת</button>
               </div>
             </div>
             <div id="reminder-email-message" class="success-message"></div>
@@ -291,39 +294,39 @@
         </div>
 
         <div class="card" style="margin-top: 1.5rem;">
-          <h3>שבעה נקיים</h3>
-          <p class="settings-description">הגדרות הקשורות לספירת שבעה נקיים.</p>
+          <h3 data-i18n="settings_nekiim_title">שבעה נקיים</h3>
+          <p class="settings-description" data-i18n="settings_nekiim_desc">הגדרות הקשורות לספירת שבעה נקיים.</p>
           <div class="toggle-group">
             <label class="toggle-option">
               <input type="checkbox" id="setting-nekiim-reminder">
-              <span>תזכורת מייל לבדיקות — פעמיים ביום: לפני השקיעה ובבוקר</span>
+              <span data-i18n="settings_nekiim_reminder">תזכורת מייל לבדיקות — פעמיים ביום: לפני השקיעה ובבוקר</span>
             </label>
             <label class="toggle-option">
               <input type="checkbox" id="setting-nekiim-calendar">
-              <span>הצגת ימי נקיים בלוח — סימון ימי ספירה בלוח השנה</span>
+              <span data-i18n="settings_nekiim_calendar">הצגת ימי נקיים בלוח — סימון ימי ספירה בלוח השנה</span>
             </label>
           </div>
           <div id="nekiim-settings-message" class="success-message" role="status"></div>
         </div>
 
         <div class="card" style="margin-top: 1.5rem;">
-          <h3>מיקום (לחישוב שקיעה/זריחה)</h3>
-          <p class="settings-description">הזן מיקום לקבלת זמני שקיעה וזריחה מדויקים לאזורך.</p>
+          <h3 data-i18n="settings_location">מיקום (לחישוב שקיעה/זריחה)</h3>
+          <p class="settings-description" data-i18n="settings_location_desc">הזן מיקום לקבלת זמני שקיעה וזריחה מדויקים לאזורך.</p>
           <div class="form-row">
             <div class="form-group">
-              <label>עיר</label>
+              <label data-i18n="settings_city">עיר</label>
               <select id="setting-city">
-                <option value="">בחר עיר</option>
-                <option value="31.7683,35.2137">ירושלים</option>
-                <option value="32.0853,34.7818">תל אביב</option>
-                <option value="32.7940,34.9896">חיפה</option>
-                <option value="31.2530,34.7915">באר שבע</option>
-                <option value="32.9246,35.0700">צפת</option>
-                <option value="31.6100,34.7700">אשדוד</option>
-                <option value="29.5577,34.9519">אילת</option>
-                <option value="32.3275,34.8519">נתניה</option>
-                <option value="31.8928,34.8113">בית שמש</option>
-                <option value="31.8950,35.2100">מעלה אדומים</option>
+                <option value="" data-i18n="city_select">בחר עיר</option>
+                <option value="31.7683,35.2137" data-i18n="city_jerusalem">ירושלים</option>
+                <option value="32.0853,34.7818" data-i18n="city_tel_aviv">תל אביב</option>
+                <option value="32.7940,34.9896" data-i18n="city_haifa">חיפה</option>
+                <option value="31.2530,34.7915" data-i18n="city_beer_sheva">באר שבע</option>
+                <option value="32.9246,35.0700" data-i18n="city_tzfat">צפת</option>
+                <option value="31.6100,34.7700" data-i18n="city_ashdod">אשדוד</option>
+                <option value="29.5577,34.9519" data-i18n="city_eilat">אילת</option>
+                <option value="32.3275,34.8519" data-i18n="city_netanya">נתניה</option>
+                <option value="31.8928,34.8113" data-i18n="city_bet_shemesh">בית שמש</option>
+                <option value="31.8950,35.2100" data-i18n="city_maale_adumim">מעלה אדומים</option>
               </select>
             </div>
           </div>
@@ -331,20 +334,31 @@
         </div>
 
         <div class="card" style="margin-top: 1.5rem;">
-          <h3>מפתח API</h3>
-          <p class="settings-description">
-            מפתח API מאפשר גישה תכנותית למערכת (לכלי AI, אוטומציות וכו').
-            <a href="#api-docs" class="settings-link">תיעוד API →</a>
+          <h3 data-i18n="settings_lang">שפה</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <select id="setting-lang">
+                <option value="he">עברית</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 1.5rem;">
+          <h3 data-i18n="settings_apikey">מפתח API</h3>
+          <p class="settings-description"><span data-i18n="settings_apikey_desc">מפתח API מאפשר גישה תכנותית למערכת (לכלי AI, אוטומציות וכו').</span>
+            <a href="#api-docs" class="settings-link" data-i18n="settings_apikey_docs_link">תיעוד API →</a>
           </p>
           <div class="api-key-section">
             <div class="api-key-display" id="api-key-display">
               <code id="api-key-value">••••••••••••••••••••</code>
             </div>
             <div class="form-actions">
-              <button class="btn btn-secondary" id="reveal-api-key-btn">צפה ב-API Key</button>
-              <button class="btn btn-secondary" id="hide-api-key-btn" style="display:none;">הסתר</button>
-              <button class="btn btn-secondary" id="copy-api-key-btn" style="display:none;">העתק</button>
-              <button class="btn btn-primary" id="generate-api-key-btn">צור מפתח חדש</button>
+              <button class="btn btn-secondary" id="reveal-api-key-btn" data-i18n="settings_apikey_reveal">צפה ב-API Key</button>
+              <button class="btn btn-secondary" id="hide-api-key-btn" style="display:none;" data-i18n="settings_apikey_hide">הסתר</button>
+              <button class="btn btn-secondary" id="copy-api-key-btn" style="display:none;" data-i18n="settings_apikey_copy">העתק</button>
+              <button class="btn btn-primary" id="generate-api-key-btn" data-i18n="settings_apikey_generate">צור מפתח חדש</button>
             </div>
             <div id="api-key-message" class="success-message" role="status"></div>
           </div>
@@ -553,38 +567,38 @@ curl -H "X-API-Key: vst_your_key" \
 
   <!-- Footer -->
   <footer id="app-footer" class="app-footer">
-    <a href="#api-docs" class="footer-link">תיעוד API</a>
+    <a href="#api-docs" class="footer-link" data-i18n="footer_api_docs">תיעוד API</a>
     <span class="footer-sep">|</span>
-    <a href="#privacy" class="footer-link">מדיניות פרטיות</a>
+    <a href="#privacy" class="footer-link" data-i18n="footer_privacy">מדיניות פרטיות</a>
   </footer>
 
   <!-- Admin View -->
   <section id="view-admin" class="view" style="display:none;">
     <div class="settings-container">
-      <h2>ניהול מערכת</h2>
+      <h2 data-i18n="admin_title">ניהול מערכת</h2>
       <div class="card">
-        <h3>סטטיסטיקות</h3>
+        <h3 data-i18n="admin_stats">סטטיסטיקות</h3>
         <div id="admin-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:0.75rem;"></div>
       </div>
       <div class="card" style="margin-top:1.5rem;">
-        <h3>הרשמה</h3>
+        <h3 data-i18n="admin_registration">הרשמה</h3>
         <div class="toggle-group">
           <label class="toggle-option">
             <input type="checkbox" id="admin-allow-registration">
-            <span>הרשמה פתוחה — משתמשים חדשים יכולים להירשם</span>
+            <span data-i18n="admin_registration_open">הרשמה פתוחה — משתמשים חדשים יכולים להירשם</span>
           </label>
         </div>
       </div>
       <div class="card" style="margin-top:1.5rem;">
-        <h3>משתמשים</h3>
+        <h3 data-i18n="admin_users">משתמשים</h3>
         <div class="table-wrapper">
           <table class="data-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>דוא"ל</th>
-                <th>הרשמה</th>
-                <th>פעולות</th>
+                <th data-i18n="admin_col_id">#</th>
+                <th data-i18n="admin_col_email">דוא"ל</th>
+                <th data-i18n="admin_col_registered">הרשמה</th>
+                <th data-i18n="admin_col_actions">פעולות</th>
               </tr>
             </thead>
             <tbody id="admin-users-tbody"></tbody>
@@ -596,6 +610,7 @@ curl -H "X-API-Key: vst_your_key" \
 
   <script src="/lib/hebrew-date.js"></script>
   <script src="/js/api.js"></script>
+  <script src="/js/i18n.js"></script>
   <script src="/js/hebrew-datepicker.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/calendar.js"></script>
