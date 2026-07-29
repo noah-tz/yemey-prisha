@@ -14,7 +14,8 @@ if (!fs.existsSync(dbDir)) {
 
 const db = new Database(DB_PATH);
 
-// Enable WAL mode for better read concurrency
+// Use WAL mode with exclusive locking (avoids shm file requirement in restricted containers)
+db.pragma('locking_mode = EXCLUSIVE');
 db.pragma('journal_mode = WAL');
 
 // Enable foreign key constraint enforcement

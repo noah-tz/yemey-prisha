@@ -34,6 +34,8 @@ var History = (function() {
     { value: '6', name: 'אלול', days: 29 }
   ];
 
+  var mainDatepicker = null;
+
   function init() {
     var form = document.getElementById('cycle-form');
     var cancelBtn = document.getElementById('cycle-cancel-btn');
@@ -47,20 +49,18 @@ var History = (function() {
       resetForm();
     });
 
-    // Populate day dropdown with Hebrew gematria (1-30)
-    populateDays('cycle-heb-day', 30);
-
-    // Populate year dropdown with Hebrew year names
-    populateYears(document.getElementById('cycle-heb-year'));
-
-    // Month/year change updates day count
-    document.getElementById('cycle-heb-month').addEventListener('change', updateMainFormDays);
-    document.getElementById('cycle-heb-year').addEventListener('change', updateMainFormDays);
-
-    // Sunset display when date fields change
-    document.getElementById('cycle-heb-day').addEventListener('change', updateSunsetDisplay);
-    document.getElementById('cycle-heb-month').addEventListener('change', updateSunsetDisplay);
-    document.getElementById('cycle-heb-year').addEventListener('change', updateSunsetDisplay);
+    // Initialize datepicker on the main form input
+    var dpInput = document.getElementById('cycle-datepicker-input');
+    mainDatepicker = HebrewDatepicker.create(dpInput, {
+      showOnah: true,
+      onSelectWithOnah: function(date, onah) {
+        document.getElementById('cycle-heb-day').value = date.day;
+        document.getElementById('cycle-heb-month').value = date.month;
+        document.getElementById('cycle-heb-year').value = date.year;
+        document.getElementById('cycle-onah').value = onah;
+        updateSunsetDisplay();
+      }
+    });
 
     // Import buttons
     document.getElementById('import-add-row-btn').addEventListener('click', function() {
@@ -186,12 +186,16 @@ var History = (function() {
     var sunsetDiv = document.getElementById('sunset-display');
     var sunsetTime = document.getElementById('sunset-time');
 
-    if (!day || !month || !year) { sunsetDiv.style.display = 'none'; return; }
+    var dateStr;
+    if (day && month && year) {
+      var gregDate = HebrewDate.heb2greg(parseInt(year), parseInt(month), parseInt(day));
+      if (!gregDate) { dateStr = todayDateStr(); }
+      else { dateStr = gregDate.getFullYear() + '-' + String(gregDate.getMonth()+1).padStart(2,'0') + '-' + String(gregDate.getDate()).padStart(2,'0'); }
+    } else {
+      // No date selected — show today's sunset
+      dateStr = todayDateStr();
+    }
 
-    var gregDate = HebrewDate.heb2greg(parseInt(year), parseInt(month), parseInt(day));
-    if (!gregDate) { sunsetDiv.style.display = 'none'; return; }
-
-    var dateStr = gregDate.getFullYear() + '-' + String(gregDate.getMonth()+1).padStart(2,'0') + '-' + String(gregDate.getDate()).padStart(2,'0');
     Api.get('/api/settings/sunset?date=' + dateStr)
       .then(function(data) {
         if (data.sunset) {
@@ -204,7 +208,15 @@ var History = (function() {
       .catch(function() { sunsetDiv.style.display = 'none'; });
   }
 
+  function todayDateStr() {
+    var now = new Date();
+    return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  }
+
   function render() {
+    // Always show sunset time
+    updateSunsetDisplay();
+
     Promise.all([
       Api.get('/api/cycles'),
       Api.get('/api/mechitzot')
@@ -255,9 +267,15 @@ var History = (function() {
       startCell.textContent = HebrewDate.format(hebDate);
       row.appendChild(startCell);
 
-      // Gregorian date (secondary)
+      // Gregorian date (secondary) — formatted as DD/MM/YYYY
       var gregCell = document.createElement('td');
-      gregCell.textContent = cycle.start_date || '';
+      var gregRaw = cycle.start_date || '';
+      if (gregRaw && gregRaw.indexOf('-') !== -1) {
+        var parts = gregRaw.split('-');
+        gregCell.textContent = parts[2] + '/' + parts[1] + '/' + parts[0];
+      } else {
+        gregCell.textContent = gregRaw;
+      }
       gregCell.style.color = 'var(--color-text-secondary)';
       gregCell.style.fontSize = '0.85rem';
       row.appendChild(gregCell);
@@ -384,31 +402,22 @@ var History = (function() {
     editingId = cycle.id;
     document.getElementById('cycle-edit-id').value = cycle.id;
 
-    // Ensure the year exists in the dropdown before setting it
-    var yearSelect = document.getElementById('cycle-heb-year');
-    var yearValue = String(cycle.start_heb_year);
-    var yearExists = false;
-    for (var i = 0; i < yearSelect.options.length; i++) {
-      if (yearSelect.options[i].value === yearValue) {
-        yearExists = true;
-        break;
-      }
-    }
-    if (!yearExists && cycle.start_heb_year) {
-      var opt = document.createElement('option');
-      opt.value = cycle.start_heb_year;
-      opt.textContent = HebrewDate.formatYear(cycle.start_heb_year);
-      yearSelect.insertBefore(opt, yearSelect.options[1]); // After "שנה" placeholder
-    }
-
-    yearSelect.value = yearValue;
-    document.getElementById('cycle-heb-month').value = String(cycle.start_heb_month) || '';
-
-    // Update days dropdown for this month/year combination, then set day
-    updateMainFormDays();
-    document.getElementById('cycle-heb-day').value = String(cycle.start_heb_day) || '';
-
+    // Set hidden fields
+    document.getElementById('cycle-heb-day').value = String(cycle.start_heb_day);
+    document.getElementById('cycle-heb-month').value = String(cycle.start_heb_month);
+    document.getElementById('cycle-heb-year').value = String(cycle.start_heb_year);
     document.getElementById('cycle-onah').value = cycle.onah || 'day';
+
+    // Update datepicker display
+    var date = { year: cycle.start_heb_year, month: cycle.start_heb_month, day: cycle.start_heb_day };
+    var dpInput = document.getElementById('cycle-datepicker-input');
+    var onah = cycle.onah || 'day';
+    var text = HebrewDate.toGematria(date.day) + ' ' + HebrewDate.getMonthName(date.month) + ' ' + HebrewDate.formatYear(date.year);
+    text += ' | ' + (onah === 'night' ? '🌙 לילה' : '☀️ יום');
+    dpInput.value = text;
+
+    if (mainDatepicker) mainDatepicker.setDate(date);
+
     document.getElementById('cycle-form-title').textContent = 'עריכת וסת';
     document.getElementById('cycle-submit-btn').textContent = 'עדכן';
     document.getElementById('cycle-cancel-btn').style.display = 'inline-block';
@@ -421,6 +430,11 @@ var History = (function() {
     editingId = null;
     document.getElementById('cycle-form').reset();
     document.getElementById('cycle-edit-id').value = '';
+    document.getElementById('cycle-heb-day').value = '';
+    document.getElementById('cycle-heb-month').value = '';
+    document.getElementById('cycle-heb-year').value = '';
+    document.getElementById('cycle-onah').value = 'day';
+    document.getElementById('cycle-datepicker-input').value = '';
     document.getElementById('cycle-form-title').textContent = 'הוספת וסת';
     document.getElementById('cycle-submit-btn').textContent = 'הוסף';
     document.getElementById('cycle-cancel-btn').style.display = 'none';
@@ -468,79 +482,37 @@ var History = (function() {
     rowDiv.id = 'import-row-' + importRowCount;
     
     rowDiv.innerHTML =
-      '<div class="form-row">' +
-      '  <div class="form-group" style="flex:0.6;">' +
-      '    <select class="import-day" required>' +
-      '      <option value="">יום</option>' +
-      generateHebrewDayOptions(30) +
-      '    </select>' +
-      '  </div>' +
+      '<div class="form-row" style="align-items:center;">' +
       '  <div class="form-group" style="flex:1;">' +
-      '    <select class="import-month" required>' +
-      '      <option value="">חודש</option>' +
-      '      <option value="7">תשרי</option>' +
-      '      <option value="8">חשוון</option>' +
-      '      <option value="9">כסלו</option>' +
-      '      <option value="10">טבת</option>' +
-      '      <option value="11">שבט</option>' +
-      '      <option value="12">אדר</option>' +
-      '      <option value="13">אדר ב׳</option>' +
-      '      <option value="1">ניסן</option>' +
-      '      <option value="2">אייר</option>' +
-      '      <option value="3">סיוון</option>' +
-      '      <option value="4">תמוז</option>' +
-      '      <option value="5">אב</option>' +
-      '      <option value="6">אלול</option>' +
-      '    </select>' +
+      '    <input type="text" class="import-dp-input heb-dp-input" placeholder="בחירת תאריך" readonly style="cursor:pointer;">' +
+      '    <input type="hidden" class="import-day">' +
+      '    <input type="hidden" class="import-month">' +
+      '    <input type="hidden" class="import-year">' +
+      '    <input type="hidden" class="import-onah" value="day">' +
       '  </div>' +
-      '  <div class="form-group" style="flex:0.8;">' +
-      '    <select class="import-year"></select>' +
-      '  </div>' +
-      '  <div class="form-group" style="flex:0.7;">' +
-      '    <select class="import-onah" required>' +
-      '      <option value="day">יום ☀️</option>' +
-      '      <option value="night">לילה 🌙</option>' +
-      '    </select>' +
-      '  </div>' +
-      '  <div class="form-group" style="flex:0.3; display:flex; align-items:flex-end;">' +
+      '  <div class="form-group" style="flex:0 0 auto;">' +
       '    <button type="button" class="btn btn-danger import-remove-btn" style="padding:0.4rem 0.6rem; font-size:0.8rem;">✕</button>' +
       '  </div>' +
       '</div>';
 
     container.appendChild(rowDiv);
 
-    // Populate year dropdown for this row
-    populateYears(rowDiv.querySelector('.import-year'));
+    // Initialize datepicker for this row
+    var dpInput = rowDiv.querySelector('.import-dp-input');
+    HebrewDatepicker.create(dpInput, {
+      showOnah: true,
+      onSelectWithOnah: function(date, onah) {
+        rowDiv.querySelector('.import-day').value = date.day;
+        rowDiv.querySelector('.import-month').value = date.month;
+        rowDiv.querySelector('.import-year').value = date.year;
+        rowDiv.querySelector('.import-onah').value = onah;
+      }
+    });
 
     // Remove button handler
     rowDiv.querySelector('.import-remove-btn').addEventListener('click', function() {
       container.removeChild(rowDiv);
     });
-
-    // Month/year change updates day count for this row
-    rowDiv.querySelector('.import-month').addEventListener('change', function() {
-      var daySelect = rowDiv.querySelector('.import-day');
-      var month = parseInt(this.value);
-      var year = parseInt(rowDiv.querySelector('.import-year').value);
-      var maxDay = getMaxDays(month, year);
-      populateDaysElement(daySelect, maxDay);
-    });
-
-    rowDiv.querySelector('.import-year').addEventListener('change', function() {
-      var daySelect = rowDiv.querySelector('.import-day');
-      var month = parseInt(rowDiv.querySelector('.import-month').value);
-      var year = parseInt(this.value);
-      var maxDay = getMaxDays(month, year);
-      populateDaysElement(daySelect, maxDay);
-    });
-  }
-
-  function generateHebrewDayOptions(max) {
-    var html = '';
-    for (var d = 1; d <= max; d++) {
-      html += '<option value="' + d + '">' + HEBREW_DAYS[d] + '</option>';
-    }
-    return html;
   }
 
   function handleImport() {
@@ -562,7 +534,7 @@ var History = (function() {
       if (!day && !month && !year) return; // skip empty rows
 
       if (!day || !month || !year) {
-        errors.push('שורה ' + (idx + 1) + ': נא למלא את כל השדות');
+        errors.push('שורה ' + (idx + 1) + ': נא לבחור תאריך');
         return;
       }
 
@@ -632,16 +604,8 @@ var History = (function() {
     dialog.innerHTML =
       '<h3 style="margin-bottom:0.75rem; font-size:1rem;">בחרי תאריך הפסק טהרה</h3>' +
       '<p style="font-size:0.85rem; color:var(--color-text-secondary); margin-bottom:1rem;">7 הנקיים מתחילים למחרת יום ההפסק.</p>' +
-      '<div class="form-row" style="gap:0.5rem;">' +
-      '  <div class="form-group" style="flex:0.6;"><select id="hefsek-day"><option value="">יום</option></select></div>' +
-      '  <div class="form-group" style="flex:1;"><select id="hefsek-month"><option value="">חודש</option>' +
-      '    <option value="7">תשרי</option><option value="8">חשוון</option><option value="9">כסלו</option>' +
-      '    <option value="10">טבת</option><option value="11">שבט</option><option value="12">אדר</option>' +
-      '    <option value="13">אדר ב׳</option><option value="1">ניסן</option><option value="2">אייר</option>' +
-      '    <option value="3">סיוון</option><option value="4">תמוז</option><option value="5">אב</option>' +
-      '    <option value="6">אלול</option>' +
-      '  </select></div>' +
-      '  <div class="form-group" style="flex:0.8;"><select id="hefsek-year"></select></div>' +
+      '<div class="form-group">' +
+      '  <input type="text" id="hefsek-dp-input" class="heb-dp-input" placeholder="בחירת תאריך" readonly style="cursor:pointer; width:100%;">' +
       '</div>' +
       '<div class="confirm-actions" style="margin-top:1rem;">' +
       '  <button class="btn btn-primary" id="hefsek-confirm">התחל ספירה</button>' +
@@ -652,50 +616,38 @@ var History = (function() {
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
 
-    // Populate dropdowns
-    var daySelect = document.getElementById('hefsek-day');
-    var monthSelect = document.getElementById('hefsek-month');
-    var yearSelect = document.getElementById('hefsek-year');
-
-    populateDays(daySelect, 30);
-    populateYears(yearSelect);
-
-    // Set defaults: hefsek = ראיה + 4 days (hefsek is on the 5th day from the reiyah)
+    // Compute default hefsek date: ראיה + 4 days
+    var hefsekDefault = null;
     if (defaultHeb) {
-      // Compute hefsek default: Hebrew date + 4 days
       var gregStart = HebrewDate.heb2greg(defaultHeb.year, defaultHeb.month, defaultHeb.day);
       gregStart.setDate(gregStart.getDate() + 4);
-      var hefsekDefault = HebrewDate.greg2heb(gregStart.getFullYear(), gregStart.getMonth() + 1, gregStart.getDate());
-
-      yearSelect.value = String(hefsekDefault.year);
-      monthSelect.value = String(hefsekDefault.month);
-      var maxDay = getMaxDays(hefsekDefault.month, hefsekDefault.year);
-      populateDays(daySelect, maxDay);
-      daySelect.value = String(hefsekDefault.day);
+      hefsekDefault = HebrewDate.greg2heb(gregStart.getFullYear(), gregStart.getMonth() + 1, gregStart.getDate());
     }
 
-    // Update days on month/year change
-    monthSelect.addEventListener('change', function() {
-      var m = parseInt(monthSelect.value);
-      var y = parseInt(yearSelect.value);
-      populateDays(daySelect, getMaxDays(m, y));
+    var selectedDate = hefsekDefault;
+    var dpInput = document.getElementById('hefsek-dp-input');
+    var hefsekPicker = HebrewDatepicker.create(dpInput, {
+      defaultDate: hefsekDefault,
+      onSelect: function(date) {
+        selectedDate = date;
+      }
     });
-    yearSelect.addEventListener('change', function() {
-      var m = parseInt(monthSelect.value);
-      var y = parseInt(yearSelect.value);
-      populateDays(daySelect, getMaxDays(m, y));
-    });
+
+    // Set initial display
+    if (hefsekDefault) {
+      dpInput.value = HebrewDate.toGematria(hefsekDefault.day) + ' ' + HebrewDate.getMonthName(hefsekDefault.month) + ' ' + HebrewDate.formatYear(hefsekDefault.year);
+    }
 
     // Confirm
     document.getElementById('hefsek-confirm').addEventListener('click', function() {
-      var d = daySelect.value, m = monthSelect.value, y = yearSelect.value;
-      if (!d || !m || !y) {
-        document.getElementById('hefsek-error').textContent = 'נא למלא את כל השדות';
+      if (!selectedDate) {
+        document.getElementById('hefsek-error').textContent = 'נא לבחור תאריך';
         return;
       }
-      var payload = { hefsekHeb: { year: parseInt(y), month: parseInt(m), day: parseInt(d) } };
+      var payload = { hefsekHeb: { year: selectedDate.year, month: selectedDate.month, day: selectedDate.day } };
       Api.post('/api/cycles/' + cycleId + '/nekiim', payload)
         .then(function() {
+          hefsekPicker.destroy();
           document.body.removeChild(overlay);
           render();
         })
@@ -706,10 +658,14 @@ var History = (function() {
 
     // Cancel
     document.getElementById('hefsek-cancel').addEventListener('click', function() {
+      hefsekPicker.destroy();
       document.body.removeChild(overlay);
     });
     overlay.addEventListener('click', function(e) {
-      if (e.target === overlay) document.body.removeChild(overlay);
+      if (e.target === overlay) {
+        hefsekPicker.destroy();
+        document.body.removeChild(overlay);
+      }
     });
   }
 

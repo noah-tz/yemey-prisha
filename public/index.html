@@ -124,42 +124,14 @@
           <h3 id="cycle-form-title">הוספת וסת</h3>
           <form id="cycle-form" class="cycle-form">
             <input type="hidden" id="cycle-edit-id">
+            <input type="hidden" id="cycle-heb-day">
+            <input type="hidden" id="cycle-heb-month">
+            <input type="hidden" id="cycle-heb-year">
+            <input type="hidden" id="cycle-onah" value="day">
             <div class="form-row">
-              <div class="form-group">
-                <label for="cycle-heb-day">יום</label>
-                <select id="cycle-heb-day" required>
-                  <option value="">—</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="cycle-heb-month">חודש</label>
-                <select id="cycle-heb-month" required>
-                  <option value="">—</option>
-                  <option value="7">תשרי</option>
-                  <option value="8">חשוון</option>
-                  <option value="9">כסלו</option>
-                  <option value="10">טבת</option>
-                  <option value="11">שבט</option>
-                  <option value="12">אדר</option>
-                  <option value="13">אדר ב׳</option>
-                  <option value="1">ניסן</option>
-                  <option value="2">אייר</option>
-                  <option value="3">סיוון</option>
-                  <option value="4">תמוז</option>
-                  <option value="5">אב</option>
-                  <option value="6">אלול</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="cycle-heb-year">שנה</label>
-                <select id="cycle-heb-year" required></select>
-              </div>
-              <div class="form-group">
-                <label for="cycle-onah">עונה</label>
-                <select id="cycle-onah" required>
-                  <option value="day">יום ☀️</option>
-                  <option value="night">לילה 🌙</option>
-                </select>
+              <div class="form-group" style="flex:1;">
+                <label>תאריך ועונה</label>
+                <input type="text" id="cycle-datepicker-input" class="heb-dp-input" placeholder="בחירת תאריך" readonly>
               </div>
             </div>
             <div class="form-group" id="sunset-display" style="display:none;">
@@ -578,6 +550,7 @@ curl -H "X-API-Key: vst_your_key" \
 
   <script src="/lib/hebrew-date.js"></script>
   <script src="/js/api.js"></script>
+  <script src="/js/hebrew-datepicker.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/calendar.js"></script>
   <script src="/js/history.js"></script>
