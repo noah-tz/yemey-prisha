@@ -224,7 +224,15 @@ var I18n = (function() {
       confirm_new_key: 'ייווצר מפתח חדש. המפתח הישן יפסיק לעבוד. להמשיך?',
       confirm_delete_user: 'למחוק את {email}?\nכל הנתונים יימחקו לצמיתות.',
       confirm_grant_admin: 'להפוך את {email} לאדמין?',
-      confirm_revoke_admin: 'להסיר הרשאות אדמין מ-{email}?'
+      confirm_revoke_admin: 'להסיר הרשאות אדמין מ-{email}?',
+      // Donation
+      donation_title: 'תמיכה בפרויקט',
+      donation_body: 'הפרויקט הזה נבנה ומתוחזק בהתנדבות.\nאם השירות עוזר לך, אפשר לתמוך בפיתוח ותחזוקה 🙏',
+      donation_btn: 'תמיכה דרך PayPal',
+      donation_dismiss: 'פעם אחרת',
+      // Admin donation
+      admin_donation: 'תרומות',
+      admin_donation_enabled: 'הצגת בקשת תמיכה למשתמשים'
     },
 
     en: {
@@ -442,7 +450,15 @@ var I18n = (function() {
       confirm_new_key: 'A new key will be generated. The old key will stop working. Continue?',
       confirm_delete_user: 'Delete {email}?\nAll data will be permanently deleted.',
       confirm_grant_admin: 'Make {email} an admin?',
-      confirm_revoke_admin: 'Remove admin from {email}?'
+      confirm_revoke_admin: 'Remove admin from {email}?',
+      // Donation
+      donation_title: 'Support This Project',
+      donation_body: 'This project is built and maintained voluntarily.\nIf the service helps you, consider supporting its development and upkeep 🙏',
+      donation_btn: 'Support via PayPal',
+      donation_dismiss: 'Another time',
+      // Admin donation
+      admin_donation: 'Donations',
+      admin_donation_enabled: 'Show support prompt to users'
     }
   };
 

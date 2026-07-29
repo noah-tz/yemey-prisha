@@ -143,6 +143,26 @@ router.get('/registration', (req, res) => {
 });
 
 /**
+ * GET /api/admin/donation-enabled
+ * Check if donation prompt is enabled.
+ */
+router.get('/donation-enabled', (req, res) => {
+  const enabled = process.env.DONATION_PROMPT !== 'false';
+  return res.json({ enabled });
+});
+
+/**
+ * PUT /api/admin/donation-enabled
+ * Toggle donation prompt on/off.
+ * Body: { enabled: true/false }
+ */
+router.put('/donation-enabled', (req, res) => {
+  const { enabled } = req.body;
+  process.env.DONATION_PROMPT = enabled ? 'true' : 'false';
+  return res.json({ enabled: !!enabled });
+});
+
+/**
  * PUT /api/admin/registration
  * Toggle registration open/closed. Updates the env variable at runtime.
  * Body: { allow: true/false }

@@ -203,4 +203,60 @@ router.get('/encryption-mode', (req, res) => {
   }
 });
 
+/**
+ * GET /api/settings/donation-check
+ * Check if donation prompt should be shown to current user.
+ */
+router.get('/donation-check', (req, res) => {
+  try {
+    if (process.env.DONATION_PROMPT === 'false') {
+      return res.json({ show: false });
+    }
+    const user = db.prepare('SELECT last_donation_prompt, donated_at, created_at FROM users WHERE id = ?').get(req.userId);
+    if (!user) return res.json({ show: false });
+
+    const now = new Date();
+    const SIX_MONTHS = 180 * 24 * 60 * 60 * 1000;
+    const THREE_YEARS = 3 * 365 * 24 * 60 * 60 * 1000;
+
+    // If donated: show again after 3 years
+    if (user.donated_at) {
+      const donatedDate = new Date(user.donated_at);
+      if (now - donatedDate < THREE_YEARS) return res.json({ show: false });
+    }
+
+    // If never prompted: show (new user)
+    if (!user.last_donation_prompt) return res.json({ show: true });
+
+    // Otherwise: show after 6 months since last prompt
+    const lastPrompt = new Date(user.last_donation_prompt);
+    if (now - lastPrompt >= SIX_MONTHS) return res.json({ show: true });
+
+    return res.json({ show: false });
+  } catch (err) {
+    return res.json({ show: false });
+  }
+});
+
+/**
+ * POST /api/settings/donation-prompt
+ * Record that the donation prompt was shown (dismiss) or that user donated.
+ * Body: { action: "dismissed" | "donated" }
+ */
+router.post('/donation-prompt', (req, res) => {
+  try {
+    const { action } = req.body;
+    const now = new Date().toISOString();
+
+    if (action === 'donated') {
+      db.prepare('UPDATE users SET donated_at = ?, last_donation_prompt = ? WHERE id = ?').run(now, now, req.userId);
+    } else {
+      db.prepare('UPDATE users SET last_donation_prompt = ? WHERE id = ?').run(now, req.userId);
+    }
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

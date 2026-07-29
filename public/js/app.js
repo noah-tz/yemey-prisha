@@ -90,6 +90,8 @@ var App = (function() {
           window.location.hash = '#calendar';
         }
         route();
+        // Check donation prompt
+        checkDonationPrompt();
       })
       .catch(function() {
         isAuthenticated = false;
@@ -98,6 +100,47 @@ var App = (function() {
         }
         route();
       });
+  }
+
+  function checkDonationPrompt() {
+    Api.get('/api/settings/donation-check')
+      .then(function(data) {
+        if (data.show) showDonationPopup();
+      })
+      .catch(function() {});
+  }
+
+  function showDonationPopup() {
+    var overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.innerHTML =
+      '<div class="confirm-dialog" style="max-width:380px; padding:2rem; text-align:center;">' +
+      '<p style="font-size:1.8rem; margin-bottom:0.75rem;">☕</p>' +
+      '<h3 style="margin-bottom:0.75rem; color:var(--color-primary);">' + I18n.t('donation_title') + '</h3>' +
+      '<p style="line-height:1.7; font-size:0.9rem; white-space:pre-line; color:var(--color-text-secondary);">' + I18n.t('donation_body') + '</p>' +
+      '<div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:0.75rem; align-items:center;">' +
+      '<a href="https://paypal.me/vesatotCal" target="_blank" class="btn btn-primary" style="padding:0.7rem 1.5rem; font-size:0.95rem; text-decoration:none;" id="donation-yes">' + I18n.t('donation_btn') + '</a>' +
+      '<button class="btn btn-secondary" style="font-size:0.85rem;" id="donation-dismiss">' + I18n.t('donation_dismiss') + '</button>' +
+      '</div></div>';
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('donation-yes').addEventListener('click', function() {
+      Api.post('/api/settings/donation-prompt', { action: 'donated' });
+      document.body.removeChild(overlay);
+    });
+
+    document.getElementById('donation-dismiss').addEventListener('click', function() {
+      Api.post('/api/settings/donation-prompt', { action: 'dismissed' });
+      document.body.removeChild(overlay);
+    });
+
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) {
+        Api.post('/api/settings/donation-prompt', { action: 'dismissed' });
+        document.body.removeChild(overlay);
+      }
+    });
   }
 
   function route() {
@@ -205,6 +248,15 @@ var App = (function() {
       cb.checked = !!data.allow_registration;
       cb.onchange = function() {
         Api.put('/api/admin/registration', { allow: cb.checked });
+      };
+    });
+
+    // Load donation toggle
+    Api.get('/api/admin/donation-enabled').then(function(data) {
+      var cb = document.getElementById('admin-donation-enabled');
+      cb.checked = !!data.enabled;
+      cb.onchange = function() {
+        Api.put('/api/admin/donation-enabled', { enabled: cb.checked });
       };
     });
 

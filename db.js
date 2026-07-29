@@ -227,6 +227,14 @@ try {
   db.exec(`ALTER TABLE users ADD COLUMN lang TEXT NOT NULL DEFAULT 'he'`);
 } catch(e) {}
 
+// Migration: donation prompt tracking
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN last_donation_prompt TEXT`);
+} catch(e) {}
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN donated_at TEXT`);
+} catch(e) {}
+
 // Migration: mechitzot table for haflagah reset boundaries
 db.exec(`
   CREATE TABLE IF NOT EXISTS mechitzot (
