@@ -1,7 +1,7 @@
 const db = require('../db');
 const crypto = require('crypto');
 
-const SETTINGS_COLUMNS = 'id, email, posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, reminder_enabled, reminder_email, nekiim_reminder, nekiim_show_calendar, latitude, longitude, created_at';
+const SETTINGS_COLUMNS = 'id, email, posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, reminder_enabled, reminder_email, nekiim_reminder, nekiim_show_calendar, latitude, longitude, is_admin, created_at';
 
 /**
  * Create a new user and return the user object (without password_hash).

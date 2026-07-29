@@ -19,6 +19,7 @@
       <a href="#calendar" class="nav-link" data-view="calendar">לוח</a>
       <a href="#history" class="nav-link" data-view="history">היסטוריה</a>
       <a href="#settings" class="nav-link" data-view="settings">הגדרות</a>
+      <a href="#admin" class="nav-link" data-view="admin" id="nav-admin" style="display:none;">ניהול</a>
       <button id="theme-toggle" class="nav-link" style="border:none; cursor:pointer; background:none; font-size:1.1rem;" title="מצב כהה/בהיר">🌙</button>
       <a href="#" id="logout-btn" class="nav-link nav-logout">יציאה</a>
     </div>
@@ -39,7 +40,10 @@
             </div>
             <div class="form-group">
               <label for="login-password">סיסמה</label>
-              <input type="password" id="login-password" required autocomplete="current-password">
+              <div class="password-wrapper">
+                <input type="password" id="login-password" required autocomplete="current-password">
+                <button type="button" class="password-toggle" tabindex="-1">👁</button>
+              </div>
             </div>
             <div id="login-error" class="error-message" role="alert"></div>
             <button type="submit" class="btn btn-primary">כניסה</button>
@@ -57,11 +61,17 @@
             </div>
             <div class="form-group">
               <label for="register-password">סיסמה</label>
-              <input type="password" id="register-password" required autocomplete="new-password">
+              <div class="password-wrapper">
+                <input type="password" id="register-password" required autocomplete="new-password">
+                <button type="button" class="password-toggle" tabindex="-1">👁</button>
+              </div>
             </div>
             <div class="form-group">
               <label for="register-confirm">אימות סיסמה</label>
-              <input type="password" id="register-confirm" required autocomplete="new-password">
+              <div class="password-wrapper">
+                <input type="password" id="register-confirm" required autocomplete="new-password">
+                <button type="button" class="password-toggle" tabindex="-1">👁</button>
+              </div>
             </div>
             <div class="form-group" style="margin-top: 1rem;">
               <label class="toggle-option" style="border: none; padding: 0;">
@@ -548,6 +558,42 @@ curl -H "X-API-Key: vst_your_key" \
     <a href="#privacy" class="footer-link">מדיניות פרטיות</a>
   </footer>
 
+  <!-- Admin View -->
+  <section id="view-admin" class="view" style="display:none;">
+    <div class="settings-container">
+      <h2>ניהול מערכת</h2>
+      <div class="card">
+        <h3>סטטיסטיקות</h3>
+        <div id="admin-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:0.75rem;"></div>
+      </div>
+      <div class="card" style="margin-top:1.5rem;">
+        <h3>הרשמה</h3>
+        <div class="toggle-group">
+          <label class="toggle-option">
+            <input type="checkbox" id="admin-allow-registration">
+            <span>הרשמה פתוחה — משתמשים חדשים יכולים להירשם</span>
+          </label>
+        </div>
+      </div>
+      <div class="card" style="margin-top:1.5rem;">
+        <h3>משתמשים</h3>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>דוא"ל</th>
+                <th>הרשמה</th>
+                <th>פעולות</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <script src="/lib/hebrew-date.js"></script>
   <script src="/js/api.js"></script>
   <script src="/js/hebrew-datepicker.js"></script>
@@ -560,6 +606,21 @@ curl -H "X-API-Key: vst_your_key" \
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(function(){});
     }
+    // Password visibility toggle
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('password-toggle')) {
+        var input = e.target.parentElement.querySelector('input');
+        if (input.type === 'password') {
+          input.type = 'text';
+          e.target.textContent = '👁';
+          e.target.style.textDecoration = 'line-through';
+        } else {
+          input.type = 'password';
+          e.target.textContent = '👁';
+          e.target.style.textDecoration = 'none';
+        }
+      }
+    });
   </script>
 </body>
 </html>

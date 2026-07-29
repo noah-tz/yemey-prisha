@@ -975,3 +975,27 @@ body {
   border-color: #5C6BC0;
   background: #E8EAF6;
 }
+
+/* === Password Toggle Eye === */
+.password-wrapper {
+  position: relative;
+}
+.password-wrapper input {
+  padding-left: 2.5rem;
+}
+.password-toggle {
+  position: absolute;
+  left: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--color-text-secondary);
+  padding: 0.2rem;
+  line-height: 1;
+}
+.password-toggle:hover {
+  color: var(--color-text);
+}

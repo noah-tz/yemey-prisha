@@ -33,6 +33,11 @@ function register(email, password) {
 
   try {
     const user = userRepository.create(email, hash, encSalt, null);
+
+    // Create empty padded blob immediately — ensures all users look identical in DB
+    const { saveUserData } = require('./userDataService');
+    saveUserData(user.id, { cycles: [], vestot: [], mechitzot: [], nekiim: [], next_cycle_id: 1, next_veset_id: 1 }, encKey);
+
     return { ...user, encKey: encKey.toString('hex') };
   } catch (err) {
     if (err.message && err.message.includes('UNIQUE constraint failed')) {

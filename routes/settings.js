@@ -3,6 +3,7 @@ const router = express.Router();
 const requireAuth = require('../middleware/auth');
 const userRepository = require('../repositories/userRepository');
 const cycleService = require('../services/cycleService');
+const db = require('../db');
 
 // All routes require authentication
 router.use(requireAuth);
@@ -74,7 +75,9 @@ router.get('/', (req, res) => {
       nekiim_reminder: !!user.nekiim_reminder,
       nekiim_show_calendar: !!user.nekiim_show_calendar,
       latitude: user.latitude || null,
-      longitude: user.longitude || null
+      longitude: user.longitude || null,
+      is_admin: !!user.is_admin,
+      is_owner: user.id === db.prepare('SELECT MIN(id) as id FROM users').get().id
     });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });

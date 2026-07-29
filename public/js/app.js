@@ -11,11 +11,13 @@ var App = (function() {
     history: document.getElementById('view-history'),
     settings: document.getElementById('view-settings'),
     privacy: document.getElementById('view-privacy'),
-    'api-docs': document.getElementById('view-api-docs')
+    'api-docs': document.getElementById('view-api-docs'),
+    admin: document.getElementById('view-admin')
   };
 
   var nav = document.getElementById('main-nav');
   var isAuthenticated = false;
+  var isAdmin = false;
 
   function init() {
     // Dark mode toggle
@@ -63,8 +65,12 @@ var App = (function() {
 
   function checkAuth() {
     Api.get('/api/settings')
-      .then(function() {
+      .then(function(data) {
         isAuthenticated = true;
+        if (data.is_admin) {
+          isAdmin = true;
+          document.getElementById('nav-admin').style.display = '';
+        }
         if (!window.location.hash || window.location.hash === '#login' || window.location.hash === '#register') {
           window.location.hash = '#calendar';
         }
@@ -142,6 +148,16 @@ var App = (function() {
       case '#api-docs':
         views['api-docs'].style.display = 'block';
         break;
+      case '#admin':
+        if (isAdmin) {
+          views.admin.style.display = 'block';
+          setActiveNav('admin');
+          renderAdmin();
+        } else {
+          window.location.hash = '#calendar';
+          return;
+        }
+        break;
       default:
         window.location.hash = '#calendar';
         return;
@@ -151,6 +167,164 @@ var App = (function() {
   function setActiveNav(viewName) {
     var link = document.querySelector('.nav-link[data-view="' + viewName + '"]');
     if (link) link.classList.add('active');
+  }
+
+  function renderAdmin() {
+    // Load stats
+    Api.get('/api/admin/stats').then(function(data) {
+      var el = document.getElementById('admin-stats');
+      el.innerHTML =
+        '<div style="text-align:center; padding:0.75rem; background:var(--color-bg-secondary, #f0f4f8); border-radius:8px;">' +
+        '<div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">' + data.total_users + '</div><div style="font-size:0.8rem; color:var(--color-text-secondary);">משתמשים</div></div>' +
+        '<div style="text-align:center; padding:0.75rem; background:var(--color-bg-secondary, #f0f4f8); border-radius:8px;">' +
+        '<div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">' + data.users_with_data + '</div><div style="font-size:0.8rem; color:var(--color-text-secondary);">עם נתונים</div></div>' +
+        '<div style="text-align:center; padding:0.75rem; background:var(--color-bg-secondary, #f0f4f8); border-radius:8px;">' +
+        '<div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">' + data.new_users_7d + '</div><div style="font-size:0.8rem; color:var(--color-text-secondary);">חדשים (7 ימים)</div></div>' +
+        '<div style="text-align:center; padding:0.75rem; background:var(--color-bg-secondary, #f0f4f8); border-radius:8px;">' +
+        '<div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">' + formatBytes(data.db_size_bytes) + '</div><div style="font-size:0.8rem; color:var(--color-text-secondary);">גודל DB</div></div>';
+    });
+
+    // Load registration status
+    Api.get('/api/admin/registration').then(function(data) {
+      var cb = document.getElementById('admin-allow-registration');
+      cb.checked = !!data.allow_registration;
+      cb.onchange = function() {
+        Api.put('/api/admin/registration', { allow: cb.checked });
+      };
+    });
+
+    // Load users
+    Api.get('/api/admin/users').then(function(data) {
+      var tbody = document.getElementById('admin-users-tbody');
+      tbody.innerHTML = '';
+      // Find the system owner (lowest ID)
+      var ownerIdNum = null;
+      (data.users || []).forEach(function(u) {
+        if (ownerIdNum === null || u.id < ownerIdNum) ownerIdNum = u.id;
+      });
+
+      // Check if current user is the owner (only owner sees admin toggle buttons)
+      var currentIsOwner = (ownerIdNum !== null && isAdmin);
+      // We need to figure out current user ID — use a settings call or embed it
+      // Simpler: check via API response. The owner buttons only show if current session user = owner
+      Api.get('/api/settings').then(function(settings) {
+        var currentUserId = null;
+        // Get current user id from users list by matching email or just check
+        // Actually, let's fetch it from a dedicated check
+        (data.users || []).forEach(function(u) {
+          // The owner is the one with lowest id
+        });
+
+        // Determine if I am the owner
+        var iAmOwner = false;
+        Api.get('/api/admin/users').then(function() {}); // already have data
+
+        // Simple approach: try the admin toggle endpoint — if it returns 403, I'm not owner
+        // Better: just pass it from backend. For now, show buttons only if ownerIdNum matches
+        // We'll use a trick: try to see if my user id is the owner
+        // Since we can't easily get current user id client-side, let's add it to stats response
+
+        renderUsersTable(data.users || [], ownerIdNum, settings);
+      });
+    });
+  }
+
+  function renderUsersTable(users, ownerIdNum, settings) {
+    var tbody = document.getElementById('admin-users-tbody');
+    tbody.innerHTML = '';
+
+    // Determine if current user is owner by checking if settings returns for the owner
+    // We'll get current user email from the page or pass from backend
+    // Simplest: compare — the /api/admin/users/:id/admin endpoint enforces owner-only server-side
+    // So we show the buttons always for admins, but the server rejects if not owner
+    // Better UX: only show if I am owner. Let's check via dedicated field.
+
+    users.forEach(function(u) {
+      var tr = document.createElement('tr');
+      var dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString('he-IL') : '—';
+      var badge = '';
+      if (u.id === ownerIdNum) {
+        badge = ' <span style="background:#FFF3E0; color:#E65100; font-size:0.7rem; padding:0.1rem 0.3rem; border-radius:3px; white-space:nowrap;">owner</span>';
+      } else if (u.is_admin) {
+        badge = ' <span style="background:#E3F2FD; color:#1976D2; font-size:0.7rem; padding:0.1rem 0.3rem; border-radius:3px;">admin</span>';
+      }
+      tr.innerHTML =
+        '<td>' + u.id + '</td>' +
+        '<td style="direction:ltr; text-align:left;">' + u.email + badge + '</td>' +
+        '<td>' + dateStr + '</td>' +
+        '<td></td>';
+
+      var actionsCell = tr.querySelector('td:last-child');
+
+      // Only the owner sees admin toggle and delete buttons
+      if (u.id !== ownerIdNum && settings.is_owner) {
+        if (u.is_admin) {
+          var revokeBtn = document.createElement('button');
+          revokeBtn.className = 'btn';
+          revokeBtn.style.cssText = 'font-size:0.7rem; padding:0.2rem 0.4rem; background:#FFF3E0; color:#E65100; margin-left:0.3rem;';
+          revokeBtn.textContent = '- admin';
+          revokeBtn.addEventListener('click', (function(uid, email) {
+            return function() {
+              if (confirm('להסיר הרשאות אדמין מ-' + email + '?')) {
+                Api.put('/api/admin/users/' + uid + '/admin', { is_admin: false }).then(function() { renderAdmin(); });
+              }
+            };
+          })(u.id, u.email));
+          actionsCell.appendChild(revokeBtn);
+        } else {
+          var adminBtn = document.createElement('button');
+          adminBtn.className = 'btn';
+          adminBtn.style.cssText = 'font-size:0.7rem; padding:0.2rem 0.4rem; background:#E3F2FD; color:#1976D2; margin-left:0.3rem;';
+          adminBtn.textContent = '+ admin';
+          adminBtn.addEventListener('click', (function(uid, email) {
+            return function() {
+              if (confirm('להפוך את ' + email + ' לאדמין?')) {
+                Api.put('/api/admin/users/' + uid + '/admin', { is_admin: true }).then(function() { renderAdmin(); });
+              }
+            };
+          })(u.id, u.email));
+          actionsCell.appendChild(adminBtn);
+        }
+
+        if (!u.is_admin) {
+          var delBtn = document.createElement('button');
+          delBtn.className = 'btn btn-danger';
+          delBtn.style.cssText = 'font-size:0.7rem; padding:0.2rem 0.4rem; margin-right:0.3rem;';
+          delBtn.textContent = 'מחיקה';
+          delBtn.addEventListener('click', (function(uid, email) {
+            return function() {
+              if (confirm('למחוק את ' + email + '?\nכל הנתונים יימחקו לצמיתות.')) {
+                Api.del('/api/admin/users/' + uid).then(function() { renderAdmin(); });
+              }
+            };
+          })(u.id, u.email));
+          actionsCell.appendChild(delBtn);
+        }
+      } else if (u.id !== ownerIdNum && !u.is_admin && !settings.is_owner) {
+        // Non-owner admin can only delete non-admin users
+        var delBtn2 = document.createElement('button');
+        delBtn2.className = 'btn btn-danger';
+        delBtn2.style.cssText = 'font-size:0.7rem; padding:0.2rem 0.4rem;';
+        delBtn2.textContent = 'מחיקה';
+        delBtn2.addEventListener('click', (function(uid, email) {
+          return function() {
+            if (confirm('למחוק את ' + email + '?\nכל הנתונים יימחקו לצמיתות.')) {
+              Api.del('/api/admin/users/' + uid).then(function() { renderAdmin(); });
+            }
+          };
+        })(u.id, u.email));
+        actionsCell.appendChild(delBtn2);
+      }
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
   // Public API

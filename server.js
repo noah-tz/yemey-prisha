@@ -62,6 +62,7 @@ app.use('/api/settings', require('./routes/settings'));
 app.use('/api/mechitzot', require('./routes/mechitzot'));
 app.use('/api/reminder-emails', require('./routes/reminderEmails'));
 app.use('/api/docs', require('./routes/api-docs'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Health check endpoint (public, no auth)
 app.get('/health', (req, res) => {

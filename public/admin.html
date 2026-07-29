@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ניהול — לוח וסתות</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-primary: #1976D2;
+      --color-danger: #D32F2F;
+      --color-success: #388E3C;
+      --color-bg: #F5F7FA;
+      --color-surface: #FFFFFF;
+      --color-text: #1A1A2E;
+      --color-text-secondary: #6B7280;
+      --color-border: #E5E7EB;
+    }
+    body { font-family: -apple-system, 'Arial Hebrew', sans-serif; background: var(--color-bg); color: var(--color-text); padding: 1.5rem; max-width: 900px; margin: 0 auto; }
+    h1 { color: var(--color-primary); margin-bottom: 1.5rem; }
+    .card { background: var(--color-surface); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .card h2 { font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--color-text); }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; }
+    .stat-box { text-align: center; padding: 1rem; border-radius: 8px; background: var(--color-bg); }
+    .stat-box .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--color-primary); }
+    .stat-box .stat-label { font-size: 0.8rem; color: var(--color-text-secondary); margin-top: 0.25rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 0.6rem 0.5rem; text-align: right; border-bottom: 1px solid var(--color-border); }
+    th { font-weight: 600; color: var(--color-text-secondary); font-size: 0.8rem; }
+    tr:hover { background: #F0F7FF; }
+    .btn { border: none; border-radius: 6px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.8rem; font-weight: 500; }
+    .btn-danger { background: var(--color-danger); color: #fff; }
+    .btn-danger:hover { background: #B71C1C; }
+    .badge { font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; }
+    .badge-admin { background: #E3F2FD; color: var(--color-primary); }
+    .badge-data { background: #E8F5E9; color: var(--color-success); }
+    .back-link { display: inline-block; margin-bottom: 1rem; color: var(--color-primary); text-decoration: none; font-size: 0.9rem; }
+    .back-link:hover { text-decoration: underline; }
+    .error { color: var(--color-danger); padding: 2rem; text-align: center; }
+    .loading { color: var(--color-text-secondary); padding: 2rem; text-align: center; }
+    .email-col { direction: ltr; text-align: left; }
+  </style>
+</head>
+<body>
+  <a href="/" class="back-link">← חזרה ללוח</a>
+  <h1>ניהול מערכת</h1>
+
+  <div id="admin-error" class="error" style="display:none;"></div>
+  <div id="admin-loading" class="loading">טוען...</div>
+  <div id="admin-content" style="display:none;">
+
+    <div class="card">
+      <h2>סטטיסטיקות</h2>
+      <div class="stats-grid" id="stats-grid"></div>
+    </div>
+
+    <div class="card">
+      <h2>משתמשים</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>דוא"ל</th>
+            <th>תאריך הרשמה</th>
+            <th>נתונים</th>
+            <th>תזכורות</th>
+            <th>פעולות</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    (function() {
+      'use strict';
+
+      function fetchJSON(url, opts) {
+        return fetch(url, Object.assign({ credentials: 'same-origin', headers: { 'Accept': 'application/json' } }, opts))
+          .then(function(r) {
+            if (r.status === 401) { window.location.href = '/'; return Promise.reject('unauthorized'); }
+            if (r.status === 403) { return Promise.reject('forbidden'); }
+            return r.json().then(function(d) { if (!r.ok) return Promise.reject(d.error); return d; });
+          });
+      }
+
+      function formatBytes(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      }
+
+      function formatDate(iso) {
+        if (!iso) return '—';
+        var d = new Date(iso);
+        return d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear();
+      }
+
+      function loadStats() {
+        return fetchJSON('/api/admin/stats').then(function(data) {
+          var grid = document.getElementById('stats-grid');
+          grid.innerHTML =
+            '<div class="stat-box"><div class="stat-value">' + data.total_users + '</div><div class="stat-label">משתמשים</div></div>' +
+            '<div class="stat-box"><div class="stat-value">' + data.users_with_data + '</div><div class="stat-label">עם נתונים</div></div>' +
+            '<div class="stat-box"><div class="stat-value">' + data.new_users_7d + '</div><div class="stat-label">חדשים (7 ימים)</div></div>' +
+            '<div class="stat-box"><div class="stat-value">' + data.active_sessions + '</div><div class="stat-label">sessions</div></div>' +
+            '<div class="stat-box"><div class="stat-value">' + formatBytes(data.db_size_bytes) + '</div><div class="stat-label">גודל DB</div></div>';
+        });
+      }
+
+      function loadUsers() {
+        return fetchJSON('/api/admin/users').then(function(data) {
+          var tbody = document.getElementById('users-tbody');
+          tbody.innerHTML = '';
+          data.users.forEach(function(u) {
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+              '<td>' + u.id + '</td>' +
+              '<td class="email-col">' + u.email + (u.is_admin ? ' <span class="badge badge-admin">admin</span>' : '') + '</td>' +
+              '<td>' + formatDate(u.created_at) + '</td>' +
+              '<td>' + (u.has_data ? '<span class="badge badge-data">יש</span>' : '—') + '</td>' +
+              '<td>' + (u.reminder_enabled ? '✓' : '—') + '</td>' +
+              '<td></td>';
+
+            // Delete button (not for admin)
+            var actionsCell = tr.querySelector('td:last-child');
+            if (!u.is_admin) {
+              var btn = document.createElement('button');
+              btn.className = 'btn btn-danger';
+              btn.textContent = 'מחיקה';
+              btn.addEventListener('click', function() { deleteUser(u.id, u.email); });
+              actionsCell.appendChild(btn);
+            }
+
+            tbody.appendChild(tr);
+          });
+        });
+      }
+
+      function deleteUser(id, email) {
+        if (!confirm('למחוק את המשתמש ' + email + '?\nכל הנתונים יימחקו לצמיתות.')) return;
+        fetchJSON('/api/admin/users/' + id, { method: 'DELETE' })
+          .then(function() { loadUsers(); loadStats(); })
+          .catch(function(err) { alert(err || 'שגיאה'); });
+      }
+
+      // Init
+      Promise.all([loadStats(), loadUsers()])
+        .then(function() {
+          document.getElementById('admin-loading').style.display = 'none';
+          document.getElementById('admin-content').style.display = 'block';
+        })
+        .catch(function(err) {
+          document.getElementById('admin-loading').style.display = 'none';
+          var errEl = document.getElementById('admin-error');
+          errEl.style.display = 'block';
+          if (err === 'forbidden') {
+            errEl.textContent = 'אין לך הרשאות ניהול.';
+          } else if (err === 'unauthorized') {
+            errEl.textContent = 'יש להתחבר תחילה.';
+          } else {
+            errEl.textContent = 'שגיאה בטעינת נתוני ניהול.';
+          }
+        });
+    })();
+  </script>
+</body>
+</html>

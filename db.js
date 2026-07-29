@@ -213,6 +213,15 @@ try {
   db.exec(`ALTER TABLE users ADD COLUMN nekiim_show_calendar INTEGER NOT NULL DEFAULT 0`);
 } catch(e) {}
 
+// Migration: admin role
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0`);
+} catch(e) {}
+// Mark user id=1000 (first user) as admin
+try {
+  db.exec(`UPDATE users SET is_admin = 1 WHERE id = (SELECT MIN(id) FROM users)`);
+} catch(e) {}
+
 // Migration: mechitzot table for haflagah reset boundaries
 db.exec(`
   CREATE TABLE IF NOT EXISTS mechitzot (
