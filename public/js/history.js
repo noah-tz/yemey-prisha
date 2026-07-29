@@ -307,7 +307,7 @@ var History = (function() {
       delBtn.className = 'btn btn-danger';
       delBtn.textContent = 'מחיקה';
       delBtn.addEventListener('click', function() {
-        confirmDelete(cycle.id);
+        confirmDelete(cycle);
       });
       actionsCell.appendChild(delBtn);
 
@@ -441,12 +441,18 @@ var History = (function() {
     document.getElementById('cycle-form-error').textContent = '';
   }
 
-  function confirmDelete(id) {
+  function confirmDelete(cycle) {
+    var id = cycle.id;
+    var hebDate = { year: cycle.start_heb_year, month: cycle.start_heb_month, day: cycle.start_heb_day };
+    var dateStr = HebrewDate.format(hebDate);
+    var onahStr = cycle.onah === 'night' ? '🌙 לילה' : '☀️ יום';
+
     var overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
     overlay.innerHTML =
       '<div class="confirm-dialog">' +
-      '<p>האם למחוק וסת זו?</p>' +
+      '<p style="font-weight:600; margin-bottom:0.5rem;">האם למחוק וסת זו?</p>' +
+      '<p style="font-size:0.9rem; color:var(--color-text-secondary);">' + dateStr + ' | ' + onahStr + '</p>' +
       '<div class="confirm-actions">' +
       '<button class="btn btn-danger" id="confirm-yes">מחק</button>' +
       '<button class="btn btn-secondary" id="confirm-no">ביטול</button>' +
