@@ -258,7 +258,7 @@ var History = (function() {
     table.style.display = 'table';
     emptyState.style.display = 'none';
 
-    cycles.forEach(function(cycle) {
+    cycles.forEach(function(cycle, cycleIndex) {
       var row = document.createElement('tr');
 
       // Hebrew date
@@ -323,19 +323,21 @@ var History = (function() {
       })(cycle.id));
       actionsCell.appendChild(mechitzaBtn);
 
-      // Nekiim button
-      var nekiimBtn = document.createElement('button');
-      nekiimBtn.className = 'btn btn-secondary';
-      nekiimBtn.style.fontSize = '0.7rem';
-      nekiimBtn.style.padding = '0.2rem 0.4rem';
-      nekiimBtn.textContent = '7️⃣';
-      nekiimBtn.title = I18n.t('hist_nekiim_btn_title');
-      nekiimBtn.addEventListener('click', (function(cycleId, hebDate) {
-        return function() {
-          showHefsekDatePicker(cycleId, hebDate);
-        };
-      })(cycle.id, { year: cycle.start_heb_year, month: cycle.start_heb_month, day: cycle.start_heb_day }));
-      actionsCell.appendChild(nekiimBtn);
+      // Nekiim button — only on the most recent (last) cycle
+      if (cycleIndex === cycles.length - 1) {
+        var nekiimBtn = document.createElement('button');
+        nekiimBtn.className = 'btn btn-secondary';
+        nekiimBtn.style.fontSize = '0.7rem';
+        nekiimBtn.style.padding = '0.2rem 0.4rem';
+        nekiimBtn.textContent = '7️⃣';
+        nekiimBtn.title = I18n.t('hist_nekiim_btn_title');
+        nekiimBtn.addEventListener('click', (function(cycleId, hebDate) {
+          return function() {
+            showHefsekDatePicker(cycleId, hebDate);
+          };
+        })(cycle.id, { year: cycle.start_heb_year, month: cycle.start_heb_month, day: cycle.start_heb_day }));
+        actionsCell.appendChild(nekiimBtn);
+      }
 
       row.appendChild(actionsCell);
       tbody.appendChild(row);

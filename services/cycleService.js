@@ -101,7 +101,13 @@ function getHistory(userId, encKey) {
 
   const data = loadUserData(userId, encKey);
   const sorted = [...data.cycles].sort((a, b) => a.start_rd - b.start_rd);
+  const mechitzaAfterIds = new Set((data.mechitzot || []).map(m => m.after_record_id));
+
   return sorted.map((record, index) => {
+    // If the previous record has a mechitza after it, this record's interval resets
+    if (index > 0 && mechitzaAfterIds.has(sorted[index - 1].id)) {
+      return { ...record, intervalFromPrevious: null };
+    }
     const interval = index > 0 ? record.start_rd - sorted[index - 1].start_rd + 1 : null;
     return { ...record, intervalFromPrevious: interval };
   });
