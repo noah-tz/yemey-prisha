@@ -222,6 +222,11 @@ try {
   db.exec(`UPDATE users SET is_admin = 1 WHERE id = (SELECT MIN(id) FROM users)`);
 } catch(e) {}
 
+// Migration: user language preference
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN lang TEXT NOT NULL DEFAULT 'he'`);
+} catch(e) {}
+
 // Migration: mechitzot table for haflagah reset boundaries
 db.exec(`
   CREATE TABLE IF NOT EXISTS mechitzot (

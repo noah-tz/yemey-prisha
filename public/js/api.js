@@ -15,7 +15,7 @@ var Api = (function() {
     }
     return res.json().then(function(data) {
       if (!res.ok) {
-        var msg = data.error || data.message || 'שגיאה לא ידועה';
+        var msg = data.error || data.message || (typeof I18n !== 'undefined' ? I18n.t('error_unknown') : 'Error');
         return Promise.reject(new Error(msg));
       }
       return data;

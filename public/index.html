@@ -384,47 +384,47 @@
 
     <!-- API Documentation View -->
     <section id="view-api-docs" class="view" style="display:none;">
-      <div class="docs-container">
-        <h2>תיעוד API</h2>
-        <p class="settings-description">ה-API מאפשר גישה תכנותית לכל הפונקציות של לוח וסתות.</p>
+      <div class="docs-container" dir="ltr" style="text-align:left;">
+        <h2>API Documentation</h2>
+        <p class="settings-description">The API provides programmatic access to all Luach Vestot features.</p>
 
         <div class="card">
-          <h3>אימות (Authentication)</h3>
-          <p>שלח את מפתח ה-API בכל בקשה באחד מהאופנים:</p>
+          <h3>Authentication</h3>
+          <p>Send your API key with every request using one of these methods:</p>
           <div class="code-block">
             <code>X-API-Key: vst_your_key_here</code>
           </div>
-          <p style="margin-top: 0.5rem;">או:</p>
+          <p style="margin-top: 0.5rem;">Or:</p>
           <div class="code-block">
             <code>Authorization: Bearer vst_your_key_here</code>
           </div>
           <p style="margin-top: 0.75rem; color: var(--color-text-secondary); font-size: 0.85rem;">
-            ליצירת מפתח: <a href="#settings">הגדרות</a> → מפתח API → צור מפתח חדש
+            Generate a key: <a href="#settings">Settings</a> → API Key → Generate New Key
           </p>
         </div>
 
         <div class="card">
-          <h3>📋 וסתות (Cycles)</h3>
+          <h3>📋 Cycles (וסתות)</h3>
           
           <div class="endpoint">
             <span class="method get">GET</span>
             <code>/api/cycles</code>
-            <p>רשימת כל הוסתות</p>
+            <p>List all cycles</p>
           </div>
 
           <div class="endpoint">
             <span class="method post">POST</span>
             <code>/api/cycles</code>
-            <p>הוספת וסת חדשה</p>
+            <p>Add a new cycle</p>
             <div class="code-block">
 <pre>{
   "startDate": "2025-08-30",
-  "onah": "day",        // "day" או "night"
-  "endDate": null,      // אופציונלי
-  "inputFormat": "gregorian"  // או "hebrew"
+  "onah": "day",        // "day" or "night"
+  "endDate": null,      // optional
+  "inputFormat": "gregorian"  // or "hebrew"
 }
 
-// קלט עברי:
+// Hebrew input:
 {
   "startDateHeb": { "year": 5786, "month": 7, "day": 6 },
   "onah": "night",
@@ -436,10 +436,9 @@
           <div class="endpoint">
             <span class="method post">POST</span>
             <code>/api/cycles/import</code>
-            <p>ייבוא מרובה של וסתות קודמות</p>
+            <p>Bulk import past cycles</p>
             <div class="code-block">
-<pre>// Body:
-{
+<pre>{
   "records": [
     { "startDate": "2025-08-30", "onah": "day" },
     { "startDate": "2025-09-28", "onah": "night" },
@@ -449,11 +448,7 @@
 }
 
 // Response:
-{
-  "imported": 4,
-  "skipped": 0,
-  "errors": []
-}
+{ "imported": 4, "skipped": 0, "errors": [] }
 
 // Format per record:
 // startDate: YYYY-MM-DD (required)
@@ -466,25 +461,25 @@
           <div class="endpoint">
             <span class="method put">PUT</span>
             <code>/api/cycles/:id</code>
-            <p>עריכת וסת קיימת</p>
+            <p>Edit an existing cycle</p>
           </div>
 
           <div class="endpoint">
             <span class="method delete">DELETE</span>
             <code>/api/cycles/:id</code>
-            <p>מחיקת וסת</p>
+            <p>Delete a cycle</p>
           </div>
         </div>
 
         <div class="card">
-          <h3>📅 ימי פרישה (Vestot)</h3>
+          <h3>📅 Vestot (Separation Days)</h3>
           
           <div class="endpoint">
             <span class="method get">GET</span>
             <code>/api/vestot</code>
-            <p>כל ימי הפרישה המחושבים</p>
+            <p>Get all calculated separation days</p>
             <div class="code-block">
-<pre>// תגובה:
+<pre>// Response:
 {
   "vestot": [
     {
@@ -499,62 +494,62 @@
   ]
 }
 
-// סוגי וסתות:
-// onah_beinonit - עונה בינונית (יום 30)
-// onah_beinonit_31 - עונה בינונית 31
-// haflagah - הפלגה ראשונה
-// haflagah_2 - הפלגה שנייה
-// haflagah_3 - הפלגה שלישית
-// hachodesh - וסת החודש</pre>
+// Veset types:
+// onah_beinonit - day 30
+// onah_beinonit_31 - day 31
+// haflagah - 1st interval
+// haflagah_2 - 2nd interval
+// haflagah_3 - 3rd interval
+// hachodesh - Hebrew month-day</pre>
             </div>
           </div>
 
           <div class="endpoint">
             <span class="method get">GET</span>
             <code>/api/vestot/calendar?from=2025-09-01&amp;to=2025-09-30</code>
-            <p>ימי פרישה בטווח תאריכים</p>
+            <p>Separation days in a date range</p>
           </div>
         </div>
 
         <div class="card">
-          <h3>⚙️ הגדרות (Settings)</h3>
+          <h3>⚙️ Settings</h3>
           
           <div class="endpoint">
             <span class="method get">GET</span>
             <code>/api/settings</code>
-            <p>הגדרות נוכחיות</p>
+            <p>Get current settings</p>
           </div>
 
           <div class="endpoint">
             <span class="method put">PUT</span>
             <code>/api/settings</code>
-            <p>עדכון הגדרות (שולחים רק את מה שרוצים לשנות)</p>
+            <p>Update settings (send only fields to change)</p>
             <div class="code-block">
 <pre>{
-  "posek": "rama",            // "rama" או "mechaber"
-  "onah_beinonit_31": true,   // עונה בינונית 31
-  "or_zarua": true,           // עונת אור זרוע
-  "haflagah_shlishit": true,  // הפלגה שלישית
-  "hachodesh_overflow": false  // וסת החודש בל' מלא
+  "posek": "rama",            // "rama" or "mechaber"
+  "onah_beinonit_31": true,   // Onah Beinonit 31
+  "or_zarua": true,           // Or Zarua
+  "haflagah_shlishit": true,  // Third Haflagah
+  "hachodesh_overflow": false  // Hachodesh overflow
 }</pre>
             </div>
           </div>
         </div>
 
         <div class="card">
-          <h3>💡 דוגמה מלאה (cURL)</h3>
+          <h3>💡 Full Example (cURL)</h3>
           <div class="code-block">
-<pre># רשימת וסתות
+<pre># List cycles
 curl -H "X-API-Key: vst_your_key" \
   https://veset.dina-ins.co.il/api/cycles
 
-# הוספת וסת
+# Add a cycle
 curl -X POST -H "X-API-Key: vst_your_key" \
   -H "Content-Type: application/json" \
   -d '{"startDate":"2025-08-30","onah":"day"}' \
   https://veset.dina-ins.co.il/api/cycles
 
-# ימי פרישה לחודש
+# Separation days for a month
 curl -H "X-API-Key: vst_your_key" \
   "https://veset.dina-ins.co.il/api/vestot/calendar?from=2025-09-01&to=2025-09-30"</pre>
           </div>

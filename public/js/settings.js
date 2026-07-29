@@ -66,7 +66,7 @@ var Settings = (function() {
 
         if (!email || !email.includes('@')) {
           msgEl.className = 'error-message';
-          msgEl.textContent = 'נא להזין כתובת מייל תקינה';
+          msgEl.textContent = I18n.t('error_enter_valid_email');
           return;
         }
 
@@ -74,13 +74,13 @@ var Settings = (function() {
           .then(function(data) {
             emailInput.value = '';
             msgEl.className = 'success-message';
-            msgEl.textContent = 'מייל אימות נשלח ✓';
+            msgEl.textContent = I18n.t('msg_email_sent');
             setTimeout(function() { msgEl.textContent = ''; }, 5000);
             loadReminderEmails();
           })
           .catch(function(err) {
             msgEl.className = 'error-message';
-            msgEl.textContent = err.message || 'שגיאה';
+            msgEl.textContent = err.message || I18n.t('error_generic');
             setTimeout(function() { msgEl.textContent = ''; }, 5000);
           });
       });
@@ -102,14 +102,14 @@ var Settings = (function() {
         navigator.clipboard.writeText(apiKeyValue).then(function() {
           var msgEl = document.getElementById('api-key-message');
           msgEl.className = 'success-message';
-          msgEl.textContent = 'הועתק ✓';
+          msgEl.textContent = I18n.t('msg_copied');
           setTimeout(function() { msgEl.textContent = ''; }, 2000);
         });
       }
     });
 
     document.getElementById('generate-api-key-btn').addEventListener('click', function() {
-      if (!confirm('ייווצר מפתח חדש. המפתח הישן יפסיק לעבוד. להמשיך?')) return;
+      if (!confirm(I18n.t('confirm_new_key'))) return;
       Api.post('/api/settings/api-key', {})
         .then(function(data) {
           apiKeyValue = data.apiKey;
@@ -117,13 +117,13 @@ var Settings = (function() {
           updateApiKeyDisplay();
           var msgEl = document.getElementById('api-key-message');
           msgEl.className = 'success-message';
-          msgEl.textContent = 'מפתח חדש נוצר ✓';
+          msgEl.textContent = I18n.t('settings_key_created');
           setTimeout(function() { msgEl.textContent = ''; }, 3000);
         })
         .catch(function(err) {
           var msgEl = document.getElementById('api-key-message');
           msgEl.className = 'error-message';
-          msgEl.textContent = err.message || 'שגיאה';
+          msgEl.textContent = err.message || I18n.t('error_generic');
           setTimeout(function() { msgEl.textContent = ''; msgEl.className = 'success-message'; }, 3000);
         });
     });
@@ -134,6 +134,8 @@ var Settings = (function() {
       langSelect.value = I18n.getLang();
       langSelect.addEventListener('change', function() {
         I18n.setLang(this.value);
+        // Save to server
+        Api.put('/api/settings', { lang: this.value });
       });
     }
 
@@ -147,7 +149,7 @@ var Settings = (function() {
         Api.put('/api/settings', { latitude: parseFloat(parts[0]), longitude: parseFloat(parts[1]) })
           .then(function() {
             var msgEl = document.getElementById('location-message');
-            msgEl.textContent = 'מיקום נשמר ✓';
+            msgEl.textContent = I18n.t('settings_location_saved');
             setTimeout(function() { msgEl.textContent = ''; }, 3000);
           });
       });
@@ -173,7 +175,7 @@ var Settings = (function() {
     var copyBtn = document.getElementById('copy-api-key-btn');
     
     if (!apiKeyValue) {
-      el.textContent = 'לא נוצר עדיין';
+      el.textContent = I18n.t('settings_key_not_created');
       revealBtn.style.display = 'none';
       hideBtn.style.display = 'none';
       copyBtn.style.display = 'none';
@@ -282,7 +284,7 @@ var Settings = (function() {
       .catch(function(err) {
         msgEl.textContent = '';
         msgEl.className = 'error-message';
-        msgEl.textContent = err.message || 'שגיאה בשמירה';
+        msgEl.textContent = err.message || I18n.t('error_save');
         setTimeout(function() {
           msgEl.textContent = '';
           msgEl.className = 'success-message';
@@ -304,14 +306,14 @@ var Settings = (function() {
       .then(function() {
         if (msgEl) {
           msgEl.className = 'success-message';
-          msgEl.textContent = 'הגדרות תזכורת נשמרו ✓';
+          msgEl.textContent = I18n.t('settings_reminder_saved');
           setTimeout(function() { msgEl.textContent = ''; }, 3000);
         }
       })
       .catch(function(err) {
         if (msgEl) {
           msgEl.className = 'error-message';
-          msgEl.textContent = err.message || 'שגיאה בשמירה';
+          msgEl.textContent = err.message || I18n.t('error_save');
           setTimeout(function() { msgEl.textContent = ''; msgEl.className = 'success-message'; }, 3000);
         }
       });
@@ -340,7 +342,7 @@ var Settings = (function() {
       .catch(function(err) {
         if (msgEl) {
           msgEl.className = 'error-message';
-          msgEl.textContent = err.message || 'שגיאה בשמירה';
+          msgEl.textContent = err.message || I18n.t('error_save');
           setTimeout(function() { msgEl.textContent = ''; msgEl.className = 'success-message'; }, 3000);
         }
       });
@@ -355,7 +357,7 @@ var Settings = (function() {
         var emails = data.emails || [];
 
         if (emails.length === 0) {
-          container.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 0.85rem;">לא הוגדרו כתובות. הוסף כתובת מייל למטה.</p>';
+          container.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 0.85rem;">' + I18n.t('msg_no_emails') + '</p>';
           return;
         }
 
@@ -469,7 +471,7 @@ var Settings = (function() {
           loadEncryptionMode();
           render();
         })
-        .catch(function(err) { alert(err.message || 'שגיאה'); });
+        .catch(function(err) { alert(err.message || I18n.t('error_generic')); });
     });
     
     document.getElementById('confirm-extended-no').addEventListener('click', function() {

@@ -32,7 +32,7 @@ var Auth = (function() {
       var password = document.getElementById('login-password').value;
 
       if (!email || !password) {
-        errorEl.textContent = 'נא למלא את כל השדות';
+        errorEl.textContent = I18n.t('error_fill_fields');
         return;
       }
 
@@ -42,17 +42,17 @@ var Auth = (function() {
           App.checkAuth();
         })
         .catch(function(err) {
-          errorEl.textContent = err.message || 'שגיאה בכניסה';
+          errorEl.textContent = err.message || I18n.t('error_login');
         });
     });
 
     document.getElementById('forgot-password-link').addEventListener('click', function(e) {
       e.preventDefault();
       var email = document.getElementById('login-email').value.trim();
-      if (!email) { document.getElementById('login-error').textContent = 'נא להזין כתובת מייל'; return; }
+      if (!email) { document.getElementById('login-error').textContent = I18n.t('error_enter_email'); return; }
       fetch('/api/auth/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:email}) })
         .then(function(r) { return r.json(); })
-        .then(function(d) { document.getElementById('login-error').textContent = ''; document.getElementById('login-error').style.color='#388E3C'; document.getElementById('login-error').textContent = d.message || 'נשלח קישור לאיפוס'; });
+        .then(function(d) { document.getElementById('login-error').textContent = ''; document.getElementById('login-error').style.color='#388E3C'; document.getElementById('login-error').textContent = d.message || I18n.t('msg_reset_sent'); });
     });
 
     registerForm.addEventListener('submit', function(e) {
@@ -65,23 +65,23 @@ var Auth = (function() {
       var confirm = document.getElementById('register-confirm').value;
 
       if (!email || !password || !confirm) {
-        errorEl.textContent = 'נא למלא את כל השדות';
+        errorEl.textContent = I18n.t('error_fill_fields');
         return;
       }
 
       if (password !== confirm) {
-        errorEl.textContent = 'הסיסמאות אינן תואמות';
+        errorEl.textContent = I18n.t('error_passwords_mismatch');
         return;
       }
 
       if (password.length < 6) {
-        errorEl.textContent = 'הסיסמה חייבת להכיל לפחות 6 תווים';
+        errorEl.textContent = I18n.t('error_password_short');
         return;
       }
 
       var termsChecked = document.getElementById('register-terms').checked;
       if (!termsChecked) {
-        errorEl.textContent = 'יש לאשר את תנאי השימוש';
+        errorEl.textContent = I18n.t('error_accept_terms');
         return;
       }
 
@@ -91,7 +91,7 @@ var Auth = (function() {
           App.checkAuth();
         })
         .catch(function(err) {
-          errorEl.textContent = err.message || 'שגיאה בהרשמה';
+          errorEl.textContent = err.message || I18n.t('error_register');
         });
     });
   }

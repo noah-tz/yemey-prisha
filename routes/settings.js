@@ -91,7 +91,7 @@ router.get('/', (req, res) => {
  */
 router.put('/', (req, res) => {
   try {
-    const { posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, reminder_enabled, reminder_email, latitude, longitude, nekiim_reminder, nekiim_show_calendar } = req.body;
+    const { posek, onah_beinonit_31, or_zarua, haflagah_shlishit, hachodesh_overflow, reminder_enabled, reminder_email, latitude, longitude, nekiim_reminder, nekiim_show_calendar, lang } = req.body;
 
     // Validate posek if provided
     if (posek !== undefined && posek !== 'rama' && posek !== 'mechaber') {
@@ -111,6 +111,7 @@ router.put('/', (req, res) => {
     if (longitude !== undefined) settingsUpdate.longitude = longitude;
     if (nekiim_reminder !== undefined) settingsUpdate.nekiim_reminder = nekiim_reminder;
     if (nekiim_show_calendar !== undefined) settingsUpdate.nekiim_show_calendar = nekiim_show_calendar;
+    if (lang !== undefined) settingsUpdate.lang = lang;
 
     if (Object.keys(settingsUpdate).length === 0) {
       return res.status(400).json({ error: 'No settings provided' });

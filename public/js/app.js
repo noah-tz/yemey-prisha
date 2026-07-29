@@ -280,7 +280,7 @@ var App = (function() {
           revokeBtn.textContent = '- admin';
           revokeBtn.addEventListener('click', (function(uid, email) {
             return function() {
-              if (confirm('להסיר הרשאות אדמין מ-' + email + '?')) {
+              if (confirm(I18n.t('confirm_revoke_admin', {email: email}))) {
                 Api.put('/api/admin/users/' + uid + '/admin', { is_admin: false }).then(function() { renderAdmin(); });
               }
             };
@@ -293,7 +293,7 @@ var App = (function() {
           adminBtn.textContent = '+ admin';
           adminBtn.addEventListener('click', (function(uid, email) {
             return function() {
-              if (confirm('להפוך את ' + email + ' לאדמין?')) {
+              if (confirm(I18n.t('confirm_grant_admin', {email: email}))) {
                 Api.put('/api/admin/users/' + uid + '/admin', { is_admin: true }).then(function() { renderAdmin(); });
               }
             };
@@ -305,10 +305,10 @@ var App = (function() {
           var delBtn = document.createElement('button');
           delBtn.className = 'btn btn-danger';
           delBtn.style.cssText = 'font-size:0.7rem; padding:0.2rem 0.4rem; margin-right:0.3rem;';
-          delBtn.textContent = 'מחיקה';
+          delBtn.textContent = I18n.t('admin_delete');
           delBtn.addEventListener('click', (function(uid, email) {
             return function() {
-              if (confirm('למחוק את ' + email + '?\nכל הנתונים יימחקו לצמיתות.')) {
+              if (confirm(I18n.t('confirm_delete_user', {email: email}))) {
                 Api.del('/api/admin/users/' + uid).then(function() { renderAdmin(); });
               }
             };
@@ -320,10 +320,10 @@ var App = (function() {
         var delBtn2 = document.createElement('button');
         delBtn2.className = 'btn btn-danger';
         delBtn2.style.cssText = 'font-size:0.7rem; padding:0.2rem 0.4rem;';
-        delBtn2.textContent = 'מחיקה';
+        delBtn2.textContent = I18n.t('admin_delete');
         delBtn2.addEventListener('click', (function(uid, email) {
           return function() {
-            if (confirm('למחוק את ' + email + '?\nכל הנתונים יימחקו לצמיתות.')) {
+            if (confirm(I18n.t('confirm_delete_user', {email: email}))) {
               Api.del('/api/admin/users/' + uid).then(function() { renderAdmin(); });
             }
           };

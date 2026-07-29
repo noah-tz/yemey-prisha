@@ -18,7 +18,7 @@ async function runReminders() {
 
   // Get all users with reminders enabled
   const users = db.prepare(
-    'SELECT id, email, enc_key_encrypted, reminder_enabled, reminder_email FROM users WHERE reminder_enabled = 1'
+    'SELECT id, email, enc_key_encrypted, reminder_enabled, reminder_email, lang FROM users WHERE reminder_enabled = 1'
   ).all();
 
   if (users.length === 0) {
@@ -76,8 +76,11 @@ async function runReminders() {
         continue;
       }
 
-      const subject = '\u{1F319} תזכורת ימי פרישה — ' + formatHebrewDate(relevant[0]);
-      const body = buildReminderHtml(relevant, todayRd, tomorrowRd);
+      const userLang = user.lang || 'he';
+      const subject = userLang === 'en'
+        ? '🌙 Separation Day Reminder — ' + formatHebrewDate(relevant[0])
+        : '\u{1F319} תזכורת ימי פרישה — ' + formatHebrewDate(relevant[0]);
+      const body = buildReminderHtml(relevant, todayRd, tomorrowRd, userLang);
 
       // Send to all recipients
       for (const recipientEmail of recipients) {
@@ -111,8 +114,16 @@ function toGematria(num) {
   return (tens[t] || '') + (ones[o] || '') + '\'';
 }
 
-function buildReminderHtml(vestot, todayRd, tomorrowRd) {
-  const typeLabels = {
+function buildReminderHtml(vestot, todayRd, tomorrowRd, lang) {
+  lang = lang || 'he';
+  const typeLabels = lang === 'en' ? {
+    onah_beinonit: 'Onah Beinonit',
+    onah_beinonit_31: 'Onah Beinonit (31)',
+    haflagah: 'Haflagah 1',
+    haflagah_2: 'Haflagah 2',
+    haflagah_3: 'Haflagah 3',
+    hachodesh: 'Hachodesh'
+  } : {
     onah_beinonit: 'עונה בינונית',
     onah_beinonit_31: 'עונה בינונית (31)',
     haflagah: 'הפלגה 1',
@@ -124,13 +135,19 @@ function buildReminderHtml(vestot, todayRd, tomorrowRd) {
   const tonight = vestot.filter(v => v.date_rd === todayRd && v.onah === 'night');
   const tomorrowDay = vestot.filter(v => v.date_rd === tomorrowRd && v.onah === 'day');
 
+  const dir = lang === 'en' ? 'ltr' : 'rtl';
+  const title = lang === 'en' ? '🌙 Separation Day Reminder' : '\u{1F319} תזכורת ימי פרישה';
+  const tonightLabel = lang === 'en' ? 'Tonight (night period):' : 'הלילה (עונת לילה):';
+  const tomorrowLabel = lang === 'en' ? 'Tomorrow (day period):' : 'מחר (עונת יום):';
+  const footer = lang === 'en' ? 'Automatic message from Luach Vestot — veset.dina-ins.co.il' : 'הודעה אוטומטית מלוח וסתות — veset.dina-ins.co.il';
+
   let html = `
-    <div dir="rtl" style="font-family: Arial, 'Noto Sans Hebrew', sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #1976D2; text-align: center;">\u{1F319} תזכורת ימי פרישה</h2>
+    <div dir="${dir}" style="font-family: Arial, 'Noto Sans Hebrew', sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #1976D2; text-align: center;">${title}</h2>
   `;
 
   if (tonight.length > 0) {
-    html += `<h3 style="color: #E91E63;">הלילה (עונת לילה):</h3><ul>`;
+    html += `<h3 style="color: #E91E63;">${tonightLabel}</h3><ul>`;
     tonight.forEach(v => {
       const label = (v.is_or_zarua ? 'א״ז ' : '') + (typeLabels[v.type] || v.type);
       html += `<li>${label}</li>`;
@@ -139,7 +156,7 @@ function buildReminderHtml(vestot, todayRd, tomorrowRd) {
   }
 
   if (tomorrowDay.length > 0) {
-    html += `<h3 style="color: #FF9800;">מחר (עונת יום):</h3><ul>`;
+    html += `<h3 style="color: #FF9800;">${tomorrowLabel}</h3><ul>`;
     tomorrowDay.forEach(v => {
       const label = (v.is_or_zarua ? 'א״ז ' : '') + (typeLabels[v.type] || v.type);
       html += `<li>${label}</li>`;
@@ -150,7 +167,7 @@ function buildReminderHtml(vestot, todayRd, tomorrowRd) {
   html += `
       <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
       <p style="font-size: 12px; color: #999; text-align: center;">
-        הודעה אוטומטית מלוח וסתות — veset.dina-ins.co.il
+        ${footer}
       </p>
     </div>
   `;

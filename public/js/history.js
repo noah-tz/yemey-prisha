@@ -83,7 +83,7 @@ var History = (function() {
           a.click();
           URL.revokeObjectURL(url);
         })
-        .catch(function(err) { alert(err.message || 'שגיאה בייצוא'); });
+        .catch(function(err) { alert(err.message || I18n.t('error_export')); });
     });
 
     // Add initial import row
@@ -317,7 +317,7 @@ var History = (function() {
       mechitzaBtn.style.fontSize = '0.7rem';
       mechitzaBtn.style.padding = '0.2rem 0.4rem';
       mechitzaBtn.textContent = '✂️';
-      mechitzaBtn.title = 'הוסף מחיצה אחרי וסת זו';
+      mechitzaBtn.title = I18n.t('hist_mechitza_title');
       mechitzaBtn.addEventListener('click', (function(cycleId) {
         return function() { addMechitza(cycleId); };
       })(cycle.id));
@@ -329,7 +329,7 @@ var History = (function() {
       nekiimBtn.style.fontSize = '0.7rem';
       nekiimBtn.style.padding = '0.2rem 0.4rem';
       nekiimBtn.textContent = '7️⃣';
-      nekiimBtn.title = 'התחל שבעה נקיים';
+      nekiimBtn.title = I18n.t('hist_nekiim_btn_title');
       nekiimBtn.addEventListener('click', (function(cycleId, hebDate) {
         return function() {
           showHefsekDatePicker(cycleId, hebDate);
@@ -344,7 +344,7 @@ var History = (function() {
       if (mechitzotSet.has(cycle.id)) {
         var dividerRow = document.createElement('tr');
         dividerRow.className = 'mechitza-row';
-        dividerRow.innerHTML = '<td colspan="5" class="mechitza-divider">✂️ מחיצה — איפוס ספירת הפלגות <button class="btn btn-danger" style="font-size:0.65rem;padding:0.1rem 0.3rem;margin-right:0.5rem;">הסר</button></td>';
+        dividerRow.innerHTML = '<td colspan="5" class="mechitza-divider">' + I18n.t('hist_mechitza') + ' <button class="btn btn-danger" style="font-size:0.65rem;padding:0.1rem 0.3rem;margin-right:0.5rem;">' + I18n.t('hist_mechitza_remove') + '</button></td>';
         dividerRow.querySelector('button').addEventListener('click', (function(cycleId) {
           return function() { removeMechitza(cycleId); };
         })(cycle.id));
@@ -363,7 +363,7 @@ var History = (function() {
     var onah = document.getElementById('cycle-onah').value;
 
     if (!day || !month || !year) {
-      errorEl.textContent = 'נא למלא את כל שדות התאריך';
+      errorEl.textContent = I18n.t('error_fill_date');
       return;
     }
 
@@ -384,7 +384,7 @@ var History = (function() {
           render();
         })
         .catch(function(err) {
-          errorEl.textContent = err.message || 'שגיאה בעדכון';
+          errorEl.textContent = err.message || I18n.t('error_update');
         });
     } else {
       Api.post('/api/cycles', payload)
@@ -393,7 +393,7 @@ var History = (function() {
           render();
         })
         .catch(function(err) {
-          errorEl.textContent = err.message || 'שגיאה בהוספה';
+          errorEl.textContent = err.message || I18n.t('error_add');
         });
     }
   }
@@ -413,13 +413,13 @@ var History = (function() {
     var dpInput = document.getElementById('cycle-datepicker-input');
     var onah = cycle.onah || 'day';
     var text = HebrewDate.toGematria(date.day) + ' ' + HebrewDate.getMonthName(date.month) + ' ' + HebrewDate.formatYear(date.year);
-    text += ' | ' + (onah === 'night' ? '🌙 לילה' : '☀️ יום');
+    text += ' | ' + (onah === 'night' ? I18n.t('hist_onah_night') : I18n.t('hist_onah_day'));
     dpInput.value = text;
 
     if (mainDatepicker) mainDatepicker.setDate(date);
 
-    document.getElementById('cycle-form-title').textContent = 'עריכת וסת';
-    document.getElementById('cycle-submit-btn').textContent = 'עדכן';
+    document.getElementById('cycle-form-title').textContent = I18n.t('hist_edit_title');
+    document.getElementById('cycle-submit-btn').textContent = I18n.t('hist_update_btn');
     document.getElementById('cycle-cancel-btn').style.display = 'inline-block';
 
     // Scroll to form
@@ -435,8 +435,8 @@ var History = (function() {
     document.getElementById('cycle-heb-year').value = '';
     document.getElementById('cycle-onah').value = 'day';
     document.getElementById('cycle-datepicker-input').value = '';
-    document.getElementById('cycle-form-title').textContent = 'הוספת וסת';
-    document.getElementById('cycle-submit-btn').textContent = 'הוסף';
+    document.getElementById('cycle-form-title').textContent = I18n.t('hist_add_title');
+    document.getElementById('cycle-submit-btn').textContent = I18n.t('hist_add_btn');
     document.getElementById('cycle-cancel-btn').style.display = 'none';
     document.getElementById('cycle-form-error').textContent = '';
   }
@@ -540,7 +540,7 @@ var History = (function() {
       if (!day && !month && !year) return; // skip empty rows
 
       if (!day || !month || !year) {
-        errors.push('שורה ' + (idx + 1) + ': נא לבחור תאריך');
+        errors.push(I18n.t('hist_import_row_error', { num: idx + 1 }));
         return;
       }
 
@@ -561,15 +561,15 @@ var History = (function() {
     }
 
     if (records.length === 0) {
-      errorEl.textContent = 'נא להזין לפחות וסת אחת';
+      errorEl.textContent = I18n.t('error_enter_cycle');
       return;
     }
 
     Api.post('/api/cycles/import', { records: records })
       .then(function(result) {
-        var msg = 'יובאו ' + result.imported + ' וסתות';
+        var msg = I18n.t('hist_import_success', { count: result.imported });
         if (result.skipped > 0) {
-          msg += ' (' + result.skipped + ' דולגו)';
+          msg += ' ' + I18n.t('hist_import_skipped', { count: result.skipped });
         }
         successEl.textContent = msg + ' ✓';
         // Clear import rows
@@ -580,14 +580,14 @@ var History = (function() {
         render();
       })
       .catch(function(err) {
-        errorEl.textContent = err.message || 'שגיאה בייבוא';
+        errorEl.textContent = err.message || I18n.t('error_import');
       });
   }
 
   function addMechitza(afterRecordId) {
     Api.post('/api/mechitzot', { afterRecordId: afterRecordId })
       .then(function() { render(); })
-      .catch(function(err) { alert(err.message || 'שגיאה'); });
+      .catch(function(err) { alert(err.message || I18n.t('error_generic')); });
   }
 
   function removeMechitza(afterRecordId) {
@@ -596,7 +596,7 @@ var History = (function() {
     if (!mechitza) return;
     Api.del('/api/mechitzot/' + mechitza.id)
       .then(function() { render(); })
-      .catch(function(err) { alert(err.message || 'שגיאה'); });
+      .catch(function(err) { alert(err.message || I18n.t('error_generic')); });
   }
 
   function showHefsekDatePicker(cycleId, defaultHeb) {
@@ -647,7 +647,7 @@ var History = (function() {
     // Confirm
     document.getElementById('hefsek-confirm').addEventListener('click', function() {
       if (!selectedDate) {
-        document.getElementById('hefsek-error').textContent = 'נא לבחור תאריך';
+        document.getElementById('hefsek-error').textContent = I18n.t('error_pick_date');
         return;
       }
       var payload = { hefsekHeb: { year: selectedDate.year, month: selectedDate.month, day: selectedDate.day } };
@@ -658,7 +658,7 @@ var History = (function() {
           render();
         })
         .catch(function(err) {
-          document.getElementById('hefsek-error').textContent = err.message || 'שגיאה';
+          document.getElementById('hefsek-error').textContent = err.message || I18n.t('error_generic');
         });
     });
 
@@ -707,13 +707,13 @@ var History = (function() {
       cancelBtn.className = 'btn btn-danger';
       cancelBtn.style.cssText = 'font-size:0.7rem; padding:0.2rem 0.5rem;';
       cancelBtn.textContent = I18n.t('nekiim_delete_btn');
-      cancelBtn.title = 'מחיקת ספירה';
+      cancelBtn.title = I18n.t('hist_nekiim_delete_title');
       cancelBtn.addEventListener('click', (function(nekiimId, cycleId) {
         return function() {
           if (confirm(I18n.t('nekiim_delete_confirm'))) {
             Api.del('/api/cycles/' + cycleId + '/nekiim/' + nekiimId)
               .then(function() { render(); })
-              .catch(function(err) { alert(err.message || 'שגיאה'); });
+              .catch(function(err) { alert(err.message || I18n.t('error_generic')); });
           }
         };
       })(n.id, n.cycle_id));
