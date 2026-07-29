@@ -81,7 +81,6 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   line-height: 1.6;
-  direction: rtl;
   min-height: 100vh;
 }
 
@@ -167,7 +166,6 @@ body {
   padding: 2rem;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  text-align: right;
 }
 
 .auth-switch {
@@ -474,7 +472,6 @@ body {
 .data-table th,
 .data-table td {
   padding: 0.75rem 1rem;
-  text-align: right;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -830,7 +827,6 @@ body {
   font-size: 0.95rem;
   color: var(--color-text);
   width: 100%;
-  text-align: right;
   transition: border-color 0.2s;
 }
 .heb-dp-input:hover, .heb-dp-input:focus {
@@ -849,7 +845,6 @@ body {
   box-shadow: 0 8px 24px rgba(0,0,0,0.15);
   padding: 0.75rem;
   width: 280px;
-  direction: rtl;
   animation: heb-dp-fadein 0.15s ease;
 }
 @keyframes heb-dp-fadein {
@@ -1001,55 +996,6 @@ body {
 }
 
 /* === LTR Override (English mode) === */
-[dir="ltr"] .card,
-[dir="ltr"] .settings-container,
-[dir="ltr"] .history-container,
-[dir="ltr"] .auth-container,
-[dir="ltr"] .calendar-container {
-  text-align: left;
-}
-[dir="ltr"] .nav-bar {
-  direction: ltr;
-}
-[dir="ltr"] .nav-links {
-  direction: ltr;
-}
-[dir="ltr"] .form-group label {
-  text-align: left;
-}
-[dir="ltr"] .radio-option,
-[dir="ltr"] .toggle-option {
-  text-align: left;
-}
-[dir="ltr"] .data-table th,
-[dir="ltr"] .data-table td {
-  text-align: left;
-}
-[dir="ltr"] .data-table {
-  direction: ltr;
-}
-[dir="ltr"] .confirm-dialog {
-  text-align: left;
-}
-[dir="ltr"] .heb-dp-input {
-  text-align: left;
-}
-[dir="ltr"] .heb-dp-popup {
-  direction: ltr;
-}
-[dir="ltr"] .auth-switch,
-[dir="ltr"] .auth-form {
-  text-align: left;
-}
-[dir="ltr"] .settings-description {
-  text-align: left;
-}
-[dir="ltr"] .empty-state {
-  text-align: left;
-}
-[dir="ltr"] .calendar-legend {
-  direction: ltr;
-}
 [dir="ltr"] .password-wrapper input {
   padding-left: 0.8rem;
   padding-right: 2.5rem;
@@ -1057,4 +1003,61 @@ body {
 [dir="ltr"] .password-toggle {
   left: auto;
   right: 0.6rem;
+}
+[dir="ltr"] .form-actions {
+  justify-content: flex-start;
+}
+
+/* === Section Sidebar Navigation === */
+.section-nav-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1.5rem;
+  background: var(--color-surface);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  position: sticky;
+  top: 3.5rem;
+  z-index: 50;
+}
+.section-nav-bar a {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.section-nav-bar a:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+.section-nav-bar a.active {
+  background: #E3F2FD;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .section-nav-bar {
+    gap: 0.25rem;
+    padding: 0.4rem;
+  }
+  .section-nav-bar a {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Smooth scrolling for anchor links */
+html {
+  scroll-behavior: smooth;
+}
+
+[dir="ltr"] .confirm-dialog {
+  text-align: left;
 }

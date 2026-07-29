@@ -132,6 +132,12 @@
     <section id="view-history" class="view" style="display:none;">
       <div class="history-container">
         <h2 data-i18n="hist_title">היסטוריית וסתות</h2>
+        <div class="section-nav-bar">
+          <a data-scroll-to="cycle-form-container" data-i18n="hist_add_title">הוספת וסת</a>
+          <a data-scroll-to="import-section" data-i18n="hist_import_title">ייבוא</a>
+          <a data-scroll-to="history-table" data-i18n="hist_table_nav">טבלת וסתות</a>
+          <a data-scroll-to="nekiim-section" data-i18n="nekiim_title">שבעה נקיים</a>
+        </div>
 
         <div id="cycle-form-container" class="card">
           <h3 id="cycle-form-title" data-i18n="hist_add_title">הוספת וסת</h3>
@@ -159,7 +165,7 @@
           </form>
         </div>
 
-        <div class="card" style="margin-top: 1rem;">
+        <div class="card" id="import-section" style="margin-top: 1rem;">
           <h3 data-i18n="hist_import_title">ייבוא וסתות קודמות</h3>
           <p class="settings-description" data-i18n="hist_import_desc">הוסף שורות עם תאריך עברי ועונה. לחץ + להוספת שורה נוספת.</p>
           <div id="import-entries">
@@ -208,7 +214,17 @@
     <section id="view-settings" class="view" style="display:none;">
       <div class="settings-container">
         <h2 data-i18n="settings_title">הגדרות</h2>
-        <div class="card">
+        <div class="section-nav-bar">
+          <a data-scroll-to="settings-posek" data-i18n="settings_posek_title">בחירת פוסק</a>
+          <a data-scroll-to="settings-advanced" data-i18n="settings_advanced">מתקדמות</a>
+          <a data-scroll-to="settings-encryption" data-i18n="settings_encryption">הצפנה</a>
+          <a data-scroll-to="settings-reminders" data-i18n="settings_reminders">תזכורות</a>
+          <a data-scroll-to="settings-nekiim" data-i18n="settings_nekiim_title">נקיים</a>
+          <a data-scroll-to="settings-location" data-i18n="settings_location">מיקום</a>
+          <a data-scroll-to="settings-lang-section" data-i18n="settings_lang">שפה</a>
+          <a data-scroll-to="settings-apikey" data-i18n="settings_apikey">API</a>
+        </div>
+        <div class="card" id="settings-posek">
           <h3 data-i18n="settings_posek_title">בחירת פוסק</h3>
           <p class="settings-description" data-i18n="settings_posek_desc">
             הבחירה בפוסק משפיעה על אופן חישוב הווסתות ועל הימים שבהם יש לפרוש.
@@ -232,7 +248,7 @@
           <div id="settings-message" class="success-message" role="status"></div>
         </div>
 
-        <div class="card" style="margin-top: 1.5rem;">
+        <div class="card" id="settings-advanced" style="margin-top: 1.5rem;">
           <h3 data-i18n="settings_advanced">הגדרות מתקדמות</h3>
           <div class="toggle-group">
             <label class="toggle-option">
@@ -255,7 +271,7 @@
           <div id="advanced-settings-message" class="success-message" role="status"></div>
         </div>
 
-        <div class="card" style="margin-top: 1.5rem;">
+        <div class="card" id="settings-encryption" style="margin-top: 1.5rem;">
           <h3 data-i18n="settings_encryption">מצב הצפנה</h3>
           <div id="encryption-mode-display">
             <p id="encryption-mode-status" style="font-weight: 600; margin-bottom: 0.75rem;"></p>
@@ -265,7 +281,7 @@
           <div id="encryption-mode-message" class="success-message"></div>
         </div>
 
-        <div class="card" style="margin-top: 1.5rem;">
+        <div class="card" id="settings-reminders" style="margin-top: 1.5rem;">
           <h3 data-i18n="settings_reminders">תזכורות באימייל</h3>
           <p class="settings-description" data-i18n="settings_reminders_desc">
             קבל תזכורת יומית לפני ימי פרישה (נשלח ב-16:00). ניתן להוסיף כתובות נוספות (בן/בת זוג).
@@ -293,7 +309,7 @@
           <div id="reminder-message" class="success-message"></div>
         </div>
 
-        <div class="card" style="margin-top: 1.5rem;">
+        <div class="card" id="settings-nekiim" style="margin-top: 1.5rem;">
           <h3 data-i18n="settings_nekiim_title">שבעה נקיים</h3>
           <p class="settings-description" data-i18n="settings_nekiim_desc">הגדרות הקשורות לספירת שבעה נקיים.</p>
           <div class="toggle-group">
@@ -309,7 +325,7 @@
           <div id="nekiim-settings-message" class="success-message" role="status"></div>
         </div>
 
-        <div class="card" style="margin-top: 1.5rem;">
+        <div class="card" id="settings-location" style="margin-top: 1.5rem;">
           <h3 data-i18n="settings_location">מיקום (לחישוב שקיעה/זריחה)</h3>
           <p class="settings-description" data-i18n="settings_location_desc">הזן מיקום לקבלת זמני שקיעה וזריחה מדויקים לאזורך.</p>
           <div class="form-row">
@@ -333,7 +349,7 @@
           <div id="location-message" class="success-message"></div>
         </div>
 
-        <div class="card" style="margin-top: 1.5rem;">
+        <div class="card" id="settings-lang-section" style="margin-top: 1.5rem;">
           <h3 data-i18n="settings_lang">שפה</h3>
           <div class="form-row">
             <div class="form-group">
@@ -345,7 +361,7 @@
           </div>
         </div>
 
-        <div class="card" style="margin-top: 1.5rem;">
+        <div class="card" id="settings-apikey" style="margin-top: 1.5rem;">
           <h3 data-i18n="settings_apikey">מפתח API</h3>
           <p class="settings-description"><span data-i18n="settings_apikey_desc">מפתח API מאפשר גישה תכנותית למערכת (לכלי AI, אוטומציות וכו').</span>
             <a href="#api-docs" class="settings-link" data-i18n="settings_apikey_docs_link">תיעוד API →</a>
@@ -563,6 +579,46 @@ curl -H "X-API-Key: vst_your_key" \
         <a href="#calendar" class="btn btn-secondary" style="margin-top: 1rem;">חזרה</a>
       </div>
     </section>
+    <!-- Admin View -->
+    <section id="view-admin" class="view" style="display:none;">
+      <div class="settings-container">
+        <h2 data-i18n="admin_title">ניהול מערכת</h2>
+        <div class="section-nav-bar">
+          <a data-scroll-to="admin-stats-section" data-i18n="admin_stats">סטטיסטיקות</a>
+          <a data-scroll-to="admin-reg-section" data-i18n="admin_registration">הרשמה</a>
+          <a data-scroll-to="admin-users-section" data-i18n="admin_users">משתמשים</a>
+        </div>
+        <div class="card" id="admin-stats-section">
+          <h3 data-i18n="admin_stats">סטטיסטיקות</h3>
+          <div id="admin-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:0.75rem;"></div>
+        </div>
+        <div class="card" style="margin-top:1.5rem;">
+          <h3 data-i18n="admin_registration">הרשמה</h3>
+          <div class="toggle-group">
+            <label class="toggle-option">
+              <input type="checkbox" id="admin-allow-registration">
+              <span data-i18n="admin_registration_open">הרשמה פתוחה — משתמשים חדשים יכולים להירשם</span>
+            </label>
+          </div>
+        </div>
+        <div class="card" style="margin-top:1.5rem;">
+          <h3 data-i18n="admin_users">משתמשים</h3>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="admin_col_id">#</th>
+                  <th data-i18n="admin_col_email">דוא"ל</th>
+                  <th data-i18n="admin_col_registered">הרשמה</th>
+                  <th data-i18n="admin_col_actions">פעולות</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- Footer -->
@@ -571,42 +627,6 @@ curl -H "X-API-Key: vst_your_key" \
     <span class="footer-sep">|</span>
     <a href="#privacy" class="footer-link" data-i18n="footer_privacy">מדיניות פרטיות</a>
   </footer>
-
-  <!-- Admin View -->
-  <section id="view-admin" class="view" style="display:none;">
-    <div class="settings-container">
-      <h2 data-i18n="admin_title">ניהול מערכת</h2>
-      <div class="card">
-        <h3 data-i18n="admin_stats">סטטיסטיקות</h3>
-        <div id="admin-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:0.75rem;"></div>
-      </div>
-      <div class="card" style="margin-top:1.5rem;">
-        <h3 data-i18n="admin_registration">הרשמה</h3>
-        <div class="toggle-group">
-          <label class="toggle-option">
-            <input type="checkbox" id="admin-allow-registration">
-            <span data-i18n="admin_registration_open">הרשמה פתוחה — משתמשים חדשים יכולים להירשם</span>
-          </label>
-        </div>
-      </div>
-      <div class="card" style="margin-top:1.5rem;">
-        <h3 data-i18n="admin_users">משתמשים</h3>
-        <div class="table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th data-i18n="admin_col_id">#</th>
-                <th data-i18n="admin_col_email">דוא"ל</th>
-                <th data-i18n="admin_col_registered">הרשמה</th>
-                <th data-i18n="admin_col_actions">פעולות</th>
-              </tr>
-            </thead>
-            <tbody id="admin-users-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <script src="/lib/hebrew-date.js"></script>
   <script src="/js/api.js"></script>
@@ -633,6 +653,21 @@ curl -H "X-API-Key: vst_your_key" \
           input.type = 'password';
           e.target.textContent = '👁';
           e.target.style.textDecoration = 'none';
+        }
+      }
+      // Section nav scroll
+      if (e.target.hasAttribute('data-scroll-to')) {
+        e.preventDefault();
+        var targetId = e.target.getAttribute('data-scroll-to');
+        var targetEl = document.getElementById(targetId);
+        if (targetEl) {
+          var navBar = e.target.closest('.section-nav-bar');
+          var navHeight = navBar ? navBar.offsetHeight : 0;
+          var mainNav = document.getElementById('main-nav');
+          var mainNavHeight = mainNav ? mainNav.offsetHeight : 0;
+          var offset = navHeight + mainNavHeight + 20;
+          var top = targetEl.getBoundingClientRect().top + window.pageYOffset - offset;
+          window.scrollTo({ top: top, behavior: 'smooth' });
         }
       }
     });
