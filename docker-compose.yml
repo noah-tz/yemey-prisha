@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  vestot:
+    build: .
+    container_name: luach-vestot
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - vestot-data:/data
+    environment:
+      - PORT=3000
+      - DB_PATH=/data/vestot.db
+      - SESSION_SECRET=${SESSION_SECRET}
+      - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-false}
+      - NODE_ENV=production
+      - SMTP_HOST=smtp-relay.brevo.com
+      - SMTP_PORT=587
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=10M
+    cap_drop:
+      - ALL
+    networks:
+      - proxy-net
+
+volumes:
+  vestot-data:
+
+networks:
+  proxy-net:
+    external: true
